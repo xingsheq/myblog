@@ -3,10 +3,7 @@ node_js: stable
 
 # S: Build Lifecycle
 install:
-  - npm install hexo-cli -g
   - npm install
-#  - git clone git@github.com/xingsheq/next-xingsheq.git themes/next-xingsheq
-
 #before_script:
  # - npm install -g gulp
 
