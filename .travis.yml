@@ -12,8 +12,6 @@ git:
   submodules: false
   
 install:
-- git submodule init
-- git submodule update
 - npm install hexo
 - npm install
 - hexo clean && hexo g
@@ -23,6 +21,8 @@ script:
 - bash deploy.sh
 
 before_install:
+- sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
+- git submodule update --init --recursive
 - openssl aes-256-cbc -K $encrypted_1fc90f464345_key -iv $encrypted_1fc90f464345_iv -in id_rsa.enc -out id_rsa -d
 
 addons:
