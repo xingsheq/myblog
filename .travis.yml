@@ -14,8 +14,7 @@ git:
 install:
 - npm install hexo
 - npm install
-- hexo clean && hexo g
-- pwd
+- hexo clean && hexo g -d
 
 script:
 - bash deploy.sh
