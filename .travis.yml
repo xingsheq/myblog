@@ -14,20 +14,30 @@ git:
 install:
 - npm install hexo
 - npm install
-- hexo clean && hexo g -d
+- hexo clean && hexo g
 
 script:
 - bash deploy.sh
 
 before_install:
-- git config --global user.name "xingsheq"
-- git config --global user.email "laoqi1999@163.com"
 - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
 - git submodule update --init --recursive
 - openssl aes-256-cbc -K $encrypted_1fc90f464345_key -iv $encrypted_1fc90f464345_iv -in id_rsa.enc -out id_rsa -d
+
+after_script:
+  - cd ./public
+  - git init
+  - git config user.name "xingsheq"
+  - git config user.email "laoqi1999@163.com"
+  - git add .
+  - git commit -m "Update docs"
+  - git push --force --quiet "https://${GH_TOKEN}@${GH_REF}" master:master
 
 addons:
   ssh_known_hosts:
   - 45.62.102.9:28529
   - 192.30.253.112
   - 192.30.253.113
+env:
+ global:
+   - GH_REF: github.com/xingsheq/myblog.git  
