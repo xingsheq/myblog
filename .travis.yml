@@ -24,9 +24,6 @@ before_install:
 - openssl aes-256-cbc -K $encrypted_1fc90f464345_key -iv $encrypted_1fc90f464345_iv -in id_rsa.enc -out id_rsa -d
 - chmod 600 id_rsa
 - mv id_rsa ~/.ssh/id_rsa
-- eval $(ssh-agent)
-- ssh-add ~/.ssh/id_rsa
-- cp git_ssh_config ~/.ssh/config
 - git config --global user.name "xingsheq"
 - git config --global user.email "laoqi1999@163"
 - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
