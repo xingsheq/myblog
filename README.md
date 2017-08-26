@@ -1,2 +1,2 @@
 add at lenovo pc
-test travis
+test travis 1

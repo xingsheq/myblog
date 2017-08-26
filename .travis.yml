@@ -4,7 +4,6 @@ dist: precise
 install:
 - npm install hexo-cli -g
 - npm install
-- git clone git@github.com/xingsheq/myblog.git
 script:
 - hexo generate && rsync -az -vv --delete -e 'ssh -p 28529' public/ 45.62.102.9:/home/myblog/wwwroot
 
