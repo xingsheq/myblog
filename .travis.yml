@@ -1,20 +1,27 @@
 language: node_js
 node_js: stable
-dist: precise
-install:
-- npm install hexo-cli -g
-- npm install
-script:
-- hexo generate && rsync -az -vv --delete -e 'ssh -p 28529' public/ 45.62.102.9:/home/myblog/wwwroot
 
 branches:
   only:
-  - hexo
+  - master
+
+cache:
+  directories:
+  - node_modules
+  
+install:
+- npm install hexo
+- npm install
+- hexo clean && hexo g
+- pwd
+
+script:
+- bash deploy.sh
+
 before_install:
-- openssl aes-256-cbc -K $encrypted_1fc90f464345_key -iv $encrypted_1fc90f464345_iv -in id_rsa.enc -out .ssh/id_rsa -d
-- chmod 755 ~/.ssh/id_rsa
+- openssl aes-256-cbc -K $encrypted_1fc90f464345_key -iv $encrypted_1fc90f464345_iv -in id_rsa.enc -out id_rsa -d
 
 addons:
   ssh_known_hosts:
   - 45.62.102.9:28529
-  - 192.30.253.112  
+  - 192.30.253.112
