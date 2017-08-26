@@ -8,8 +8,11 @@ branches:
 cache:
   directories:
   - node_modules
+git:
+  submodules: false
   
 install:
+- git submodule update --init --remote --recursive
 - npm install hexo
 - npm install
 - hexo clean && hexo g
