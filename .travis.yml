@@ -8,8 +8,6 @@ branches:
 cache:
   directories:
   - node_modules
-git:
-  submodules: false
   
 install:
 - npm install hexo
