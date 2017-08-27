@@ -1,5 +1,5 @@
 ---
-title: Hexo Optimize with Next Theme
+title: Optimizing Hexo with Next Theme
 date: 2017-08-22 21:30:28
 tags: [hexo optimize,hexo优化]
 category: Hexo
