@@ -20,6 +20,8 @@ category: Travis
 
 - travis需要获得github和VPS的读写权限，通过SSH公钥认证实现，本例中travis访问github和VPS使用一套公钥和私钥。
 
+<!-- more -->
+
 # travis简介
 
 ## travis原理
@@ -27,8 +29,6 @@ category: Travis
 - 可理解为是一个根据.travis.yml预设环境变量，提供的虚拟linux；
 - 会自动克隆.travis.yml所在的仓库到这个虚拟linux；
 - 可在linux上执行各种命令。
-
-<!-- more -->
 
 ## travis部署到github
 

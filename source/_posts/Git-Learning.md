@@ -286,6 +286,13 @@ git submodule init
 git submodule update
 ```
 
+### delete
+
+1. git rm --cached [path] 
+2. 编辑“.gitmodules”文件，将子模块的相关配置节点删除掉 
+3. 编辑“ .git/config”文件，将子模块的相关配置节点删除掉 
+4. 手动删除子模块残留的目录 
+
 ## tag
 
 作用：标记某个时刻，如发布版本的时刻，以后任何时候都可以获得这个时刻的历史版本。
