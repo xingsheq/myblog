@@ -287,182 +287,180 @@ public final class SingleProducerSequencer extends SingleProducerSequencerFields
    - 如果失败，获得当前cursor位置，使用原子操作：current = this.cursor.get();计算覆盖点
    - 获得cachedGatingSequence，使用原子操作：this.gatingSequenceCache.get();
    - 设置cachedGatingSequence，使用原子操作： this.gatingSequenceCache.set(Util.getMinimumSequence(this.gatingSequences, current));
-
 2. 新增int[] availableBuffer记录ringbuffer的槽位是否已写入事件，作为map使用，key=槽位内存地址，value=圈数，如果请求的seq对应圈数和int[]存的一样，则表示已写入事件
 
-   ```
-   public final class MultiProducerSequencer extends AbstractSequencer {
-       private static final Unsafe UNSAFE = Util.getUnsafe();
-       private static final long BASE;//数组第一个元素的偏移量（内存位置）
-       private static final long SCALE;//数组每个元素大小
-       private final Sequence gatingSequenceCache = new Sequence(-1L);//最慢消费者seq缓存，不是每次都计算,只有覆盖点>最慢消费者seq时，再次请求计算最新的最慢消费者seq
-       private final int[] availableBuffer;
-       private final int indexMask;//bufferSize-1,用于取模求圈数
-       private final int indexShift;//
 
-       public MultiProducerSequencer(int bufferSize, WaitStrategy waitStrategy) {
-           super(bufferSize, waitStrategy);
-           this.availableBuffer = new int[bufferSize];
-           this.indexMask = bufferSize - 1;
-           this.indexShift = Util.log2(bufferSize);//8->3,为了后面>>>运算，m>>>n = m除以2的n次方
-           this.initialiseAvailableBuffer();
-       }
+```
+public final class MultiProducerSequencer extends AbstractSequencer {
+    private static final Unsafe UNSAFE = Util.getUnsafe();
+    private static final long BASE;//数组第一个元素的偏移量（内存位置）
+    private static final long SCALE;//数组每个元素大小
+    private final Sequence gatingSequenceCache = new Sequence(-1L);//最慢消费者seq缓存，不是每次都计算,只有覆盖点>最慢消费者seq时，再次请求计算最新的最慢消费者seq
+    private final int[] availableBuffer;
+    private final int indexMask;//bufferSize-1,用于取模求圈数
+    private final int indexShift;//
 
-       public boolean hasAvailableCapacity(int requiredCapacity) {
-           return this.hasAvailableCapacity(this.gatingSequences, requiredCapacity, this.cursor.get());
-       }
+    public MultiProducerSequencer(int bufferSize, WaitStrategy waitStrategy) {
+        super(bufferSize, waitStrategy);
+        this.availableBuffer = new int[bufferSize];
+        this.indexMask = bufferSize - 1;
+        this.indexShift = Util.log2(bufferSize);//8->3,为了后面>>>运算，m>>>n = m除以2的n次方
+        this.initialiseAvailableBuffer();
+    }
 
-       private boolean hasAvailableCapacity(Sequence[] gatingSequences, int requiredCapacity, long cursorValue) {
-           //覆盖点
-           long wrapPoint = cursorValue + (long)requiredCapacity - (long)this.bufferSize;
-           //最慢消费者的消费到的seq
-           long cachedGatingSequence = this.gatingSequenceCache.get();
-           //覆盖点过了最慢消费者的seq，
-           或者cursorValue=Long.maxValue+1位负数，最慢消费者的seq大于cursorValue（不知是否理解有误）
-           if(wrapPoint > cachedGatingSequence || cachedGatingSequence > cursorValue) {
-               //重新计算获得最慢消费者的seq
-               long minSequence = Util.getMinimumSequence(gatingSequences, cursorValue);
-               this.gatingSequenceCache.set(minSequence);
-               //如果仍然覆盖，则返回false
-               if(wrapPoint > minSequence) {
-                   return false;
-               }
-           }
-           return true;
-       }
+    public boolean hasAvailableCapacity(int requiredCapacity) {
+        return this.hasAvailableCapacity(this.gatingSequences, requiredCapacity, this.cursor.get());
+    }
 
-       public void claim(long sequence) {
-           this.cursor.set(sequence);
-       }
-       //阻塞获取可生产填充的下一seq
-       public long next() {
-           return this.next(1);
-       }
-       //阻塞获取可生产填充的下seq
-       public long next(int n) {
-           if(n < 1) {
-               throw new IllegalArgumentException("n must be > 0");
-           } else {
-               long current;
-               long next;
-               do {
-                   while(true) {
-                       current = this.cursor.get();
-                       next = current + (long)n;
-                       long wrapPoint = next - (long)this.bufferSize;
-                       long cachedGatingSequence = this.gatingSequenceCache.get();
-                       if(wrapPoint <= cachedGatingSequence && cachedGatingSequence <= current) {
-                           break;//不覆盖时，退出循环
-                       }
-                       //重新计算
-                       long gatingSequence = Util.getMinimumSequence(this.gatingSequences, current);
-                       if(wrapPoint > gatingSequence) {//如果仍然覆盖，则唤醒消费者进行消费，生产者阻塞
-                           this.waitStrategy.signalAllWhenBlocking();
-                           LockSupport.parkNanos(1L);
-                       } else {否则更新最慢消费者的seq，进行下一循环，重新判断（可能是cursor已经变了）
-                           this.gatingSequenceCache.set(gatingSequence);
-                       }
-                   }
-               } while(!this.cursor.compareAndSet(current, next));//不覆盖时，尝试设置cursor为next失败
+    private boolean hasAvailableCapacity(Sequence[] gatingSequences, int requiredCapacity, long cursorValue) {
+        //覆盖点
+        long wrapPoint = cursorValue + (long)requiredCapacity - (long)this.bufferSize;
+        //最慢消费者的消费到的seq
+        long cachedGatingSequence = this.gatingSequenceCache.get();
+        //覆盖点过了最慢消费者的seq，
+        或者cursorValue=Long.maxValue+1位负数，最慢消费者的seq大于cursorValue（不知是否理解有误）
+        if(wrapPoint > cachedGatingSequence || cachedGatingSequence > cursorValue) {
+            //重新计算获得最慢消费者的seq
+            long minSequence = Util.getMinimumSequence(gatingSequences, cursorValue);
+            this.gatingSequenceCache.set(minSequence);
+            //如果仍然覆盖，则返回false
+            if(wrapPoint > minSequence) {
+                return false;
+            }
+        }
+        return true;
+    }
 
-               return next;
-           }
-       }
-       //不阻塞，获取失败，抛异常
-       public long tryNext() throws InsufficientCapacityException {
-           return this.tryNext(1);
-       }
-       //不阻塞，获取失败，抛异常
-       public long tryNext(int n) throws InsufficientCapacityException {
-           if(n < 1) {
-               throw new IllegalArgumentException("n must be > 0");
-           } else {
-               long current;
-               long next;
-               do {
-                   current = this.cursor.get();
-                   next = current + (long)n;
-                   if(!this.hasAvailableCapacity(this.gatingSequences, n, current)) {
-                       throw InsufficientCapacityException.INSTANCE;
-                   }
-               } while(!this.cursor.compareAndSet(current, next));
+    public void claim(long sequence) {
+        this.cursor.set(sequence);
+    }
+    //阻塞获取可生产填充的下一seq
+    public long next() {
+        return this.next(1);
+    }
+    //阻塞获取可生产填充的下seq
+    public long next(int n) {
+        if(n < 1) {
+            throw new IllegalArgumentException("n must be > 0");
+        } else {
+            long current;
+            long next;
+            do {
+                while(true) {
+                    current = this.cursor.get();
+                    next = current + (long)n;
+                    long wrapPoint = next - (long)this.bufferSize;
+                    long cachedGatingSequence = this.gatingSequenceCache.get();
+                    if(wrapPoint <= cachedGatingSequence && cachedGatingSequence <= current) {
+                        break;//不覆盖时，退出循环
+                    }
+                    //重新计算
+                    long gatingSequence = Util.getMinimumSequence(this.gatingSequences, current);
+                    if(wrapPoint > gatingSequence) {//如果仍然覆盖，则唤醒消费者进行消费，生产者阻塞
+                        this.waitStrategy.signalAllWhenBlocking();
+                        LockSupport.parkNanos(1L);
+                    } else {否则更新最慢消费者的seq，进行下一循环，重新判断（可能是cursor已经变了）
+                        this.gatingSequenceCache.set(gatingSequence);
+                    }
+                }
+            } while(!this.cursor.compareAndSet(current, next));//不覆盖时，尝试设置cursor为next失败
 
-               return next;
-           }
-       }
+            return next;
+        }
+    }
+    //不阻塞，获取失败，抛异常
+    public long tryNext() throws InsufficientCapacityException {
+        return this.tryNext(1);
+    }
+    //不阻塞，获取失败，抛异常
+    public long tryNext(int n) throws InsufficientCapacityException {
+        if(n < 1) {
+            throw new IllegalArgumentException("n must be > 0");
+        } else {
+            long current;
+            long next;
+            do {
+                current = this.cursor.get();
+                next = current + (long)n;
+                if(!this.hasAvailableCapacity(this.gatingSequences, n, current)) {
+                    throw InsufficientCapacityException.INSTANCE;
+                }
+            } while(!this.cursor.compareAndSet(current, next));
 
-       public long remainingCapacity() {
-           long consumed = Util.getMinimumSequence(this.gatingSequences, this.cursor.get());
-           long produced = this.cursor.get();
-           return (long)this.getBufferSize() - (produced - consumed);
-       }
-       //初始化int[]值为-1，代表圈数
-       private void initialiseAvailableBuffer() {
-           for(int i = this.availableBuffer.length - 1; i != 0; --i) {
-               this.setAvailableBufferValue(i, -1);
-           }
+            return next;
+        }
+    }
 
-           this.setAvailableBufferValue(0, -1);
-       }
+    public long remainingCapacity() {
+        long consumed = Util.getMinimumSequence(this.gatingSequences, this.cursor.get());
+        long produced = this.cursor.get();
+        return (long)this.getBufferSize() - (produced - consumed);
+    }
+    //初始化int[]值为-1，代表圈数
+    private void initialiseAvailableBuffer() {
+        for(int i = this.availableBuffer.length - 1; i != 0; --i) {
+            this.setAvailableBufferValue(i, -1);
+        }
 
-       public void publish(long sequence) {
-           this.setAvailable(sequence);//记录seq所在槽的圈数
-           this.waitStrategy.signalAllWhenBlocking();
-       }
+        this.setAvailableBufferValue(0, -1);
+    }
 
-       public void publish(long lo, long hi) {
-           for(long l = lo; l <= hi; ++l) {
-               this.setAvailable(l);
-           }
+    public void publish(long sequence) {
+        this.setAvailable(sequence);//记录seq所在槽的圈数
+        this.waitStrategy.signalAllWhenBlocking();
+    }
 
-           this.waitStrategy.signalAllWhenBlocking();
-       }
+    public void publish(long lo, long hi) {
+        for(long l = lo; l <= hi; ++l) {
+            this.setAvailable(l);
+        }
 
-       private void setAvailable(long sequence) {
-           this.setAvailableBufferValue(this.calculateIndex(sequence), this.calculateAvailabilityFlag(sequence));
-       }
-       //按内存地址位置指定int[]元素的值，值为圈数
-       index：槽位，flag：圈数
-       private void setAvailableBufferValue(int index, int flag) {
-           //计算槽位对应的内存地址
-           long bufferAddress = (long)index * SCALE + BASE; 
-           //设置availableBuffer中偏移量（内存地址）为bufferAddress的值
-           UNSAFE.putOrderedInt(this.availableBuffer, bufferAddress, flag);
-       }
-       //是否可用：seq计算出的圈数是否已被设置到availableBuffer
-       public boolean isAvailable(long sequence) {
-           int index = this.calculateIndex(sequence);
-           int flag = this.calculateAvailabilityFlag(sequence);
-           long bufferAddress = (long)index * SCALE + BASE;
-           return UNSAFE.getIntVolatile(this.availableBuffer, bufferAddress) == flag;
-       }
-       //lowerBound 到 availableSequence之间 最大可用seq
-       public long getHighestPublishedSequence(long lowerBound, long availableSequence) {
-           for(long sequence = lowerBound; sequence <= availableSequence; ++sequence) {
-               if(!this.isAvailable(sequence)) {
-                   return sequence - 1L;
-               }
-           }
+        this.waitStrategy.signalAllWhenBlocking();
+    }
 
-           return availableSequence;
-       }
+    private void setAvailable(long sequence) {
+        this.setAvailableBufferValue(this.calculateIndex(sequence), this.calculateAvailabilityFlag(sequence));
+    }
+    //按内存地址位置指定int[]元素的值，值为圈数
+    index：槽位，flag：圈数
+    private void setAvailableBufferValue(int index, int flag) {
+        //计算槽位对应的内存地址
+        long bufferAddress = (long)index * SCALE + BASE; 
+        //设置availableBuffer中偏移量（内存地址）为bufferAddress的值
+        UNSAFE.putOrderedInt(this.availableBuffer, bufferAddress, flag);
+    }
+    //是否可用：seq计算出的圈数是否已被设置到availableBuffer
+    public boolean isAvailable(long sequence) {
+        int index = this.calculateIndex(sequence);
+        int flag = this.calculateAvailabilityFlag(sequence);
+        long bufferAddress = (long)index * SCALE + BASE;
+        return UNSAFE.getIntVolatile(this.availableBuffer, bufferAddress) == flag;
+    }
+    //lowerBound 到 availableSequence之间 最大可用seq
+    public long getHighestPublishedSequence(long lowerBound, long availableSequence) {
+        for(long sequence = lowerBound; sequence <= availableSequence; ++sequence) {
+            if(!this.isAvailable(sequence)) {
+                return sequence - 1L;
+            }
+        }
 
-       private int calculateAvailabilityFlag(long sequence) {
-           return (int)(sequence >>> this.indexShift);//圈数
-       }
+        return availableSequence;
+    }
 
-       private int calculateIndex(long sequence) {
-           return (int)sequence & this.indexMask;//槽位
-       }
+    private int calculateAvailabilityFlag(long sequence) {
+        return (int)(sequence >>> this.indexShift);//圈数
+    }
 
-       static {
-           BASE = (long)UNSAFE.arrayBaseOffset(int[].class);//数组第一个元素的偏移量（内存位置）
-           SCALE = (long)UNSAFE.arrayIndexScale(int[].class);//数组一个元素的大小
-       }
-   }
-   ```
+    private int calculateIndex(long sequence) {
+        return (int)sequence & this.indexMask;//槽位
+    }
 
-
+    static {
+        BASE = (long)UNSAFE.arrayBaseOffset(int[].class);//数组第一个元素的偏移量（内存位置）
+        SCALE = (long)UNSAFE.arrayIndexScale(int[].class);//数组一个元素的大小
+    }
+}
+```
 ## SequenceBarrier
 
 一个消费者组对应一个barrier
@@ -794,7 +792,7 @@ public interface EventHandler<T>{
 
 多个同类的workProcessor线程，竞争消费RingBuffer（通过workSequence.CAS），一个线程消费过的，其他线程不再消费
 
-- 传递workHandler，workSequence（多线程共享，上一次被处理的事件的seq，各线程尝试cas为workSequence+1，则表示获得可处理的seq）
+- 传递workHandler，workSequence（多线程共享上一次被处理的事件的seq，各线程尝试cas设置为workSequence+1，如果成功则表示改线程获得可处理的seq）
 
 - 持有eventReleaser 
 
@@ -1536,7 +1534,7 @@ class ConsumerRepository<T> implements Iterable<ConsumerInfo> {
 2. handleEventsWith()：添加handler，实际是调用disruptor.createEventProcessors创建BatchEventProcessor或disruptor.createWorkerPool创建WorkPool，更新是否为EndChain及gatingSequence
 3. and()：合并EventHandlerGroup / 添加EventProcessor，更新consumerRepository及Sequence[]
 4. then()：添加后置消费者，实际调用handleEventsWith()
-5. 创建Barrier，调用disruptor.getRingBuffer().newBarrier(this.sequences);	
+  5. 创建Barrier，调用disruptor.getRingBuffer().newBarrier(this.sequences);
 
 ```
  public class EventHandlerGroup<T> {   

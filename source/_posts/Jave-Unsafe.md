@@ -1,11 +1,9 @@
-
-
-```
-title: UnSafe类功能学习
-date: 2017-08-27 22:00:05
-tags: [java,UnSafe]
+---
+title: Jave Unsafe类源码解析
+date: 2018-02-07 16:23:56
+tags: [java,Unsafe]
 category: jdk
-```
+---
 
 # Unsafe
 
@@ -13,16 +11,19 @@ category: jdk
 
 默认必须是启动类才能getUnsafe()获得实例
 
-    public static Unsafe getUnsafe() {
-        Class var0 = Reflection.getCallerClass();
-        //判断是否是JDK内部专属的类，是则可以使用，否者抛出异常。
-        //JDK内部专属的类使用系统类加载器加载(系统类加载器为null)
-        if(!VM.isSystemDomainLoader(var0.getClassLoader())) {
-            throw new SecurityException("Unsafe");
-        } else {
-            return theUnsafe;
-        }
+```
+public static Unsafe getUnsafe() {
+    Class var0 = Reflection.getCallerClass();
+    //判断是否是JDK内部专属的类，是则可以使用，否者抛出异常。
+    //JDK内部专属的类使用系统类加载器加载(系统类加载器为null)
+    if(!VM.isSystemDomainLoader(var0.getClassLoader())) {
+        throw new SecurityException("Unsafe");
+    } else {
+        return theUnsafe;
     }
+}
+```
+
 如果是非JDK内部类，可以通过反射获得Unsafe对象，theUnsafe是Unsafe的Field
 
 ```
@@ -44,14 +45,16 @@ static {
 
 ## 对象内元素offSet
 
-    //获得对象（包含数组）中偏移量offset的int值，当为数组时，意思为指定数组元素指向的内存或值
-    public native int getInt(Object obj, long offSet);
-    
-    //设置对象中偏移量offSet的值为value
-    public native void putInt(Object obj, long offSet, int value);
-    
-    其他类似
-    Object/Boolean/Byte/Short/Char/Long/Float/Double
+```
+//获得对象（包含数组）中偏移量offset的int值，当为数组时，意思为指定数组元素指向的内存或值
+public native int getInt(Object obj, long offSet);
+
+//设置对象中偏移量offSet的值为value
+public native void putInt(Object obj, long offSet, int value);
+
+其他类似
+Object/Boolean/Byte/Short/Char/Long/Float/Double
+```
 
 ## 堆外内存
 
@@ -467,7 +470,7 @@ maxOffSet = 136
 
 未开启了指针压缩，基础数据包装类及对象引用为8字节，最小属性起始为为16=8个字节对象头(mark) + 8字节对象指针，属性实际数据应该是在17，所以根据maxOffSet=136得出对象大小范围在maxOffSet+1=137到maxOffSet+8=144之间，padding后size=155，与公式(maxOffSet/8+1)*8计算一致
 
-## 浅拷贝 
+## 浅拷贝
 
 通过复制内存数据的方式实现浅拷贝。
 
@@ -839,4 +842,3 @@ public class UnSafeTest {
     }
 }
 ```
-
