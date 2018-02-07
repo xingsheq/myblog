@@ -1,6 +1,9 @@
+```
 title: disruptor源码解析
 date: 2018-02-07 15:31:05
 tags: [disruptor,cas]
+category: disruptor
+```
 
 # 基础知识
 

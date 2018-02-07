@@ -1,8 +1,11 @@
 
 
+```
 title: UnSafe类功能学习
 date: 2017-08-27 22:00:05
 tags: [java,UnSafe]
+category: jdk
+```
 
 # Unsafe
 
