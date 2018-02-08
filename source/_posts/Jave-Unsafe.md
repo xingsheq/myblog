@@ -9,7 +9,7 @@ category: jdk
 
 ## 创建UnSafe实例
 
-默认必须是启动类才能getUnsafe()获得实例
+默认必须是Java jdk自身类才能getUnsafe()获得实例
 
 ```
 public static Unsafe getUnsafe() {
@@ -24,7 +24,7 @@ public static Unsafe getUnsafe() {
 }
 ```
 
-如果是非JDK内部类，可以通过反射获得Unsafe对象，theUnsafe是Unsafe的Field
+如果个人想要使用UnSafe类，可以通过反射获得Unsafe对象，theUnsafe是Unsafe的Field
 
 ```
 static {
@@ -43,7 +43,9 @@ static {
     }
 ```
 
-## 对象内元素offSet
+## 对象内存结构
+
+可获得/设置对象内存结构中各偏移量offSet（相对于对象在内存中的起始位置的偏移）位置的数据
 
 ```
 //获得对象（包含数组）中偏移量offset的int值，当为数组时，意思为指定数组元素指向的内存或值
@@ -56,7 +58,9 @@ public native void putInt(Object obj, long offSet, int value);
 Object/Boolean/Byte/Short/Char/Long/Float/Double
 ```
 
-## 堆外内存
+## 内存位置
+
+可直接操控内存位置
 
 ```
 //获得堆外offSet位置的byte值
@@ -70,6 +74,8 @@ public native void putByte(long position, byte value);
 ```
 
 ## 内存分配/复制/释放
+
+UnSafe的内存分配在堆外，尽量自己释放内存，编码内存溢出OOM
 
 ```
 //获得var1指向的内存地址
@@ -112,7 +118,7 @@ public native int addressSize();
 ## 数组
 
 ```
-//获取数组中第一个元素的偏移量(get offset of a first element in the array)  
+//获取数组中第一个元素的偏移量(get offset of a first element in the array)，如果是对象数组，这个offSet存的数据为对象的引用内存地址，可通过UNSAFE.getLong(array,offSet)获得
 public native int arrayBaseOffset(java.lang.Class aClass);
 
 //获取数组中一个元素的大小(get size of an element in the array)  
@@ -279,13 +285,13 @@ public class TrapEntity {
 ```
 
 ```
-//通过offSet修改对象属性
+ //通过offSet修改对象属性
     private static void changeValueByOffSetTest() {
         TrapEntity entity = new TrapEntity();
         entity.setId(1);
         entity.setAlarmName("alarm1");
         try {
-            long alarmNameOffSet = 	UNSAFE.objectFieldOffset(entity.getClass().getDeclaredField("alarmName"));
+            long alarmNameOffSet = UNSAFE.objectFieldOffset(entity.getClass().getDeclaredField("alarmName"));
             long idOffSet = UNSAFE.objectFieldOffset(entity.getClass().getDeclaredField("id"));
             System.out.println(alarmNameOffSet);
             UNSAFE.putObject(entity, alarmNameOffSet, "alarmName2");
@@ -299,18 +305,19 @@ public class TrapEntity {
         }
     }
         
-    //通过内存位置修改对象属性
+ //通过内存位置修改对象属性
     private static void changeValueByPositionTest() {
         TrapEntity entity = new TrapEntity();
         entity.setId(1);
         entity.setAlarmName("alarm1");
-        Long pos = getObjectPos(entity);
+        Long pos = UnSafeUtils.getObjectPos(entity);
         System.out.println("getObjectPos = " + pos);
 
         try {
             long idOffSet = UNSAFE.objectFieldOffset(entity.getClass().getDeclaredField("id"));
             long idPos = pos + idOffSet;
             System.out.println("old value = " + UNSAFE.getInt(idPos));
+
             UNSAFE.putInt(idPos, 2);
             System.out.println("new value = " + entity.getId());
 
@@ -534,20 +541,27 @@ public static Object createObjByPointer(long address) {
 ## 动态加载类defineClass
 
 ```
-byte[] classContents = getClassContent();
-Class c = getUnsafe().defineClass(
-              null, classContents, 0, classContents.length);
-    c.getMethod("a").invoke(c.newInstance(), null); // 1
-getClassContent()方法，将一个class文件，读取到一个byte数组。
- 
-private static byte[] getClassContent() throws Exception {
-    File f = new File("/tmp/A.class");
-    FileInputStream input = new FileInputStream(f);
-    byte[] content = new byte[(int)f.length()];
-    input.read(content);
-    input.close();
-    return content;
+    private static void defineClassTest() {
+        byte[] classContents = new byte[0];
+        try {
+            classContents = getClassContent();
+            Class c = UNSAFE.defineClass(null, classContents, 0, classContents.length,null,null);
+            Method m=c.getMethod("getId");
+            Object res =m.invoke(c.newInstance(),null);
+            System.out.println(res);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 }
+    //getClassContent()方法，将一个class文件，读取到一个byte数组。
+    private static byte[] getClassContent() throws Exception {
+        File f = new File("E:\\GAE\\rocky\\rocky-disruptor\\target\\classes\\rocky\\com\\pojo\\TrapEntity.class");
+        FileInputStream input = new FileInputStream(f);
+        byte[] content = new byte[(int)f.length()];
+        input.read(content);
+        input.close();
+        return content;
+    }
 ```
 
 ## 包装受检异常为运行时异常(不建议使用)
@@ -565,17 +579,15 @@ address = getUnsafe().allocateMemory(size);
 ## 无锁并发CAS
 
 ```
-class CASCounter implements Counter {
+public class CASCounter {
     private volatile long counter = 0;
-    private Unsafe unsafe;
+    private Unsafe unsafe= UnSafeUtils.getUnsafe();
     private long offset;
 
     public CASCounter() throws Exception {
-        unsafe = getUnsafe();
         offset = unsafe.objectFieldOffset(CASCounter.class.getDeclaredField("counter"));
     }
 
-    @Override
     public void increment() {
         long before = counter;
         while (!unsafe.compareAndSwapLong(this, offset, before, before + 1)) {
@@ -583,7 +595,6 @@ class CASCounter implements Counter {
         }
     }
 
-    @Override
     public long getCounter() {
         return counter;
     }
@@ -693,6 +704,8 @@ public class UnSafeUtils {
 
 ## POJO
 
+### TrapEntity
+
 ```
 public class TrapEntity {
     int id;
@@ -715,6 +728,8 @@ public class TrapEntity {
     }
 }
 ```
+
+### ObjectA
 
 ```
 public class ObjectA {
@@ -742,8 +757,11 @@ public class ObjectA {
 }
 ```
 
+### ObjectB
+
 ```
 public class ObjectB {
+	static int staticFile;
 }
 ```
 
@@ -766,13 +784,45 @@ public class UnSafeTest {
 //        changeValueByOffSetTest();
 //        printConstant();
 //        changeValueByPositionTest();
-       long size= UnSafeUtils.sizeOf(new ObjectA());
-       System.out.println(size);
+//       long size= UnSafeUtils.sizeOf(new ObjectA());
+//      System.out.println(size);
 //        shallowCopyTest();
+//objectStaticFieldTest();
+defineClassTest();
         System.exit(0);
     }
+    private static void defineClassTest() {
 
-
+        byte[] classContents = new byte[0];
+        try {
+            classContents = getClassContent();
+            Class c = UNSAFE.defineClass(null, classContents, 0, classContents.length,null,null);
+            Method m=c.getMethod("getId");
+            Object res =m.invoke(c.newInstance(),null);
+            System.out.println(res);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+}
+    //getClassContent()方法，将一个class文件，读取到一个byte数组。
+    private static byte[] getClassContent() throws Exception {
+        File f = new File("E:\\GAE\\rocky\\rocky-disruptor\\target\\classes\\rocky\\com\\pojo\\TrapEntity.class");
+        FileInputStream input = new FileInputStream(f);
+        byte[] content = new byte[(int)f.length()];
+        input.read(content);
+        input.close();
+        return content;
+    }
+    
+    //测试staticFieldBase方法，返回Class对象
+private static void objectStaticFieldTest(){
+    try {
+        Class objB=   (Class) UNSAFE.staticFieldBase(ObjectB.class.getDeclaredField("staticFile"));
+        System.out.println(objB.getName());
+    } catch (NoSuchFieldException e) {
+        e.printStackTrace();
+    }
+}
 
     //通过内存位置修改对象属性
     private static void changeValueByPositionTest() {
@@ -842,3 +892,68 @@ public class UnSafeTest {
     }
 }
 ```
+## CASCounter
+
+无锁并发测试
+
+```
+package rocky.com;
+
+import rocky.com.util.UnSafeUtils;
+import sun.misc.Unsafe;
+
+public class CASCounter {
+    private volatile long counter = 0;
+    private Unsafe unsafe= UnSafeUtils.getUnsafe();
+    private long offset;
+
+    public CASCounter() throws Exception {
+        offset = unsafe.objectFieldOffset(CASCounter.class.getDeclaredField("counter"));
+    }
+
+
+    public void increment() {
+        long before = counter;
+        while (!unsafe.compareAndSwapLong(this, offset, before, before + 1)) {
+            before = counter;
+        }
+    }
+
+    public long getCounter() {
+        return counter;
+    }
+
+    public static void main(String[] args) {
+        try {
+            CASCounter casCounter=new CASCounter();
+            Producer producer=new Producer(casCounter);
+            for (int i = 0; i < 5; i++) {
+                new Thread(producer).start();
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+class Producer implements Runnable{
+    CASCounter casCounter;
+    public Producer(CASCounter counter){
+        casCounter=counter;
+    }
+    @Override
+    public void run() {
+        while (true){
+            casCounter.increment();
+            System.out.println(Thread.currentThread().getName()+" increment");
+            System.out.println(Thread.currentThread().getName()+" casCounter = "+casCounter.getCounter());
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+```
+
