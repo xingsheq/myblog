@@ -2,7 +2,7 @@
 title: Disruptor源码解析
 date: 2018-02-07 15:47:19
 tags: [disruptor,cas]
-category: disruptor
+category: 3rd party jars
 ---
 
 # 基础知识
