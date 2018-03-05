@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="设计模式,design pattern," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="设计模式的六大原则SOLID Single单一职责 Open Close Principle：开闭原则，对扩展开放，对修改关闭 Liskov Substitution Principle：里氏替换原则，派生类可以替换掉基类 Dependence Inversion Principle：依赖倒置，针对对接口编程，依赖于抽象而不依赖于具体，是开闭原则的基础 Interface Segregation">
+<meta name="keywords" content="设计模式,design pattern">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Design-Pattern">
+<meta property="og:url" content="http://rockynote.com/2018/02/08/Design-Pattern/index.html">
+<meta property="og:site_name" content="老祁笔记">
+<meta property="og:description" content="设计模式的六大原则SOLID Single单一职责 Open Close Principle：开闭原则，对扩展开放，对修改关闭 Liskov Substitution Principle：里氏替换原则，派生类可以替换掉基类 Dependence Inversion Principle：依赖倒置，针对对接口编程，依赖于抽象而不依赖于具体，是开闭原则的基础 Interface Segregation">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://oulmk4pq1.bkt.clouddn.com/pattern/pattern_category.jpg">
+<meta property="og:image" content="http://oulmk4pq1.bkt.clouddn.com/pattern/pattern.jpg">
+<meta property="og:updated_time" content="2018-03-05T07:15:08.232Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Design-Pattern">
+<meta name="twitter:description" content="设计模式的六大原则SOLID Single单一职责 Open Close Principle：开闭原则，对扩展开放，对修改关闭 Liskov Substitution Principle：里氏替换原则，派生类可以替换掉基类 Dependence Inversion Principle：依赖倒置，针对对接口编程，依赖于抽象而不依赖于具体，是开闭原则的基础 Interface Segregation">
+<meta name="twitter:image" content="http://oulmk4pq1.bkt.clouddn.com/pattern/pattern_category.jpg">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://rockynote.com/2018/02/08/Design-Pattern/"/>
+
+
+
+
+
+  <title>Design-Pattern | 老祁笔记</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-105730821-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">老祁笔记</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Rocky's notes</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://rockynote.com/2018/02/08/Design-Pattern/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="老祁">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="老祁笔记">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Design-Pattern</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-02-08T02:25:59+00:00">
+                2018-02-08
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/theory/" itemprop="url" rel="index">
+                    <span itemprop="name">theory</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+             <span id="/2018/02/08/Design-Pattern/" class="leancloud_visitors" data-flag-title="Design-Pattern">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数&#58;</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="设计模式的六大原则SOLID"><a href="#设计模式的六大原则SOLID" class="headerlink" title="设计模式的六大原则SOLID"></a>设计模式的六大原则SOLID</h1><ul>
+<li>Single单一职责</li>
+<li>Open Close Principle：开闭原则，对扩展开放，对修改关闭</li>
+<li>Liskov Substitution Principle：里氏替换原则，派生类可以替换掉基类</li>
+<li>Dependence Inversion Principle：依赖倒置，针对对接口编程，依赖于抽象而不依赖于具体，是开闭原则的基础</li>
+<li>Interface Segregation Principle：接口隔离原则，最小接口，使用多个隔离的接口，比使用单个接口要好</li>
+<li>Demeter/Least Knowledge Principle：迪米特法则，不和陌生人说话，尽量少地与其他实体之间发生相互作用</li>
+<li>Composite Reuse Principle：尽量使用合成/聚合的方式，而不是使用继承</li>
+</ul>
+<h1 id="设计模式分类"><a href="#设计模式分类" class="headerlink" title="设计模式分类"></a>设计模式分类</h1><ul>
+<li>创建型：抽工建原单，</li>
+<li>结构型：适代外享组装桥。 </li>
+<li>行为型：访问者观察迭代策略，备忘录模板记录状态，命令中介解释责任链</li>
+</ul>
+<p><img src="http://oulmk4pq1.bkt.clouddn.com/pattern/pattern_category.jpg" alt=""></p>
+<h1 id="设计模式类图"><a href="#设计模式类图" class="headerlink" title="设计模式类图"></a>设计模式类图</h1><p>类与类之间的关系：<strong>鸡湿衣冠剧组</strong>(继承，实现，依赖，关联，聚合，组合)</p>
+<ul>
+<li>继承/泛化：Generalization 实线+空三角</li>
+<li>实现：Realization 虚线+空三角</li>
+<li>依赖：Dependency 虚线+箭头  不持有引用，比如局部变量，函数参数， 返回值</li>
+<li>关联：Association 实线+箭头 持有引用，比如成员变量</li>
+<li>聚合：Aggregation 实线+空菱形（整体）+箭头（局部），整体与局部，比如成员变量</li>
+<li>组合：Composition 实线+实菱形（整体）+箭头（局部），整体与局部，共生死</li>
+</ul>
+<p><img src="http://oulmk4pq1.bkt.clouddn.com/pattern/pattern.jpg" alt=""></p>
+<h1 id="1-创建型模式"><a href="#1-创建型模式" class="headerlink" title="1.  创建型模式"></a>1.  创建型模式</h1><h2 id="1-1-简单工厂Factory"><a href="#1-1-简单工厂Factory" class="headerlink" title="1.1.  简单工厂Factory"></a>1.1.  简单工厂Factory</h2><p>简单工厂模式<strong>不属于</strong>23种设计模式</p>
+<h3 id="1-1-1-普通工厂"><a href="#1-1-1-普通工厂" class="headerlink" title="1.1.1.  普通工厂"></a>1.1.1.  普通工厂</h3><p>创建工厂类，一个创建对象的方法，根据参数类型不同，返回子类对象，如：邮件和短信</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">factory.getProduct(int type)&#123;&#125;</div></pre></td></tr></table></figure>
+<h3 id="1-1-2-多方法工厂"><a href="#1-1-2-多方法工厂" class="headerlink" title="1.1.2.  多方法工厂"></a>1.1.2.  多方法工厂</h3><p>不同方法返回不同子类对象</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">factory.getProductA()&#123;&#125;</div><div class="line">factory.getProductB()&#123;&#125;</div></pre></td></tr></table></figure>
+<h3 id="1-1-3-静态工厂"><a href="#1-1-3-静态工厂" class="headerlink" title="1.1.3.  静态工厂"></a>1.1.3.  静态工厂</h3><p>方法是静态的，不需要实例工厂，最常用</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">Factory.getProduct(int type)&#123;&#125;</div><div class="line"></div><div class="line">Factory.getProduct()</div><div class="line"></div><div class="line">Factory.getProductA()&#123;&#125;</div><div class="line">Factory.getProductB()&#123;&#125;</div></pre></td></tr></table></figure>
+<h2 id="1-2-工厂方法FactoryMethod"><a href="#1-2-工厂方法FactoryMethod" class="headerlink" title="1.2.  工厂方法FactoryMethod"></a>1.2.  工厂方法FactoryMethod</h2><p>简单工厂模式有一个问题就是，类的创建依赖工厂类，也就是说，如果想要拓展程序，必须对工厂类进行修改，这违背了闭包原则。</p>
+<p>工厂方法模式，<strong>抽象出工厂接口</strong>，有多个工厂类实现（每个对象一个工厂，工厂实现同一接口）</p>
+<h2 id="1-3-抽象工厂AbstractFactory"><a href="#1-3-抽象工厂AbstractFactory" class="headerlink" title="1.3.  抽象工厂AbstractFactory"></a>1.3.  抽象工厂AbstractFactory</h2><p>抽象工厂是应对<strong>产品族</strong>概念的。比如说，每个汽车公司可能要同时生产轿车，货车，客车，那么每一个工厂都要有创建轿车，货车和客车的方法。又比如每个工厂可能同时生成鼠标和键盘。</p>
+<p>与工厂方法类似，不同的是每个工厂类可以生产不同类别的产品，如即可以生产鼠标也可以生成键盘。</p>
+<p>与工厂方法的区别</p>
+<ul>
+<li>工厂方法只能生产一种产品类，抽象工厂方法能生产不同产品族的多个产品类(多个抽象产品类)</li>
+<li>在只有一个产品族的情况下，抽象工厂模式实际上退化到工厂方法模式。</li>
+</ul>
+<h2 id="1-4-单例Singleton"><a href="#1-4-单例Singleton" class="headerlink" title="1.4.  单例Singleton"></a>1.4.  单例Singleton</h2><ul>
+<li><p>私有静态实例；</p>
+</li>
+<li><p>私有构造方法；</p>
+</li>
+<li><p>synchronized getInstance()(每次调用都加锁，性能下降)，</p>
+<ul>
+<li><p>可以使用<strong>静态内部类</strong>getInstance(){new出对象}，静态内部类只有在使用的时候才装载类，可以看做是普通的静态类，和放在哪了没有关系。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">public class Singleton &#123;  </div><div class="line">    private static class SingletonHolder &#123;  </div><div class="line">        private static final Singleton INSTANCE = new Singleton();  </div><div class="line">    &#125;  </div><div class="line">    private Singleton ()&#123;&#125;  </div><div class="line">    public static final Singleton getInstance() &#123;  </div><div class="line">        return SingletonHolder.INSTANCE; </div><div class="line">    &#125;  </div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+<li><p>也可以使用双重判断，if(s==null){ synchronized(Class){ return new s}}，new s()不是原子性的，s需要volatile声明</p>
+</li>
+</ul>
+</li>
+<li><p>使用枚举创建单例</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">public emun Singleton &#123;  </div><div class="line">	INSTANCE;</div><div class="line">	private Singleton ()&#123;&#125;</div><div class="line">	public dosth()&#123;      </div><div class="line">	&#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line">Singleton.INSTANCE.dosth()</div></pre></td></tr></table></figure>
+</li>
+</ul>
+<h2 id="1-5-建造者Builder"><a href="#1-5-建造者Builder" class="headerlink" title="1.5.  建造者Builder"></a>1.5.  建造者Builder</h2><p>创建复合对象，多部件制造和组装分开，构建与表示分离，同样的构建过程可以创建不同的表示，如：生成电脑包括生产CPU，显示器，内存，不同厂商生产出的不一样。</p>
+<p>角色：</p>
+<ul>
+<li>建造者（包含建造各部件的方法）、</li>
+<li>产品、</li>
+<li>指挥者（<strong>指挥者类Director</strong>，其拥有一个建造者对象和建造PC产品的方法construct（组装产品），该方法通过具体建造者对象，依次执行每个步骤，最后返回建造完成的产品对象）</li>
+</ul>
+<p>样例：参数较多的类的构造(属于builder模式的变形)：如struts的ActionConfig </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">Student&#123;</div><div class="line">	private Student(Student orig)&#123;</div><div class="line">  		this.name=orig.name</div><div class="line"> 	 	......</div><div class="line">	&#125;</div><div class="line">	public static class Builder &#123;</div><div class="line">        private Student target;</div><div class="line">        public Builder() &#123;</div><div class="line">            target = new Student();</div><div class="line">        &#125;</div><div class="line">         public Builder name(String name) &#123;</div><div class="line">            target.name = name;</div><div class="line">            return this;</div><div class="line">        &#125;</div><div class="line">        .......</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">tudent s=new Student.Builder().name(&quot;CC&quot;).age(11).address(xx);</div></pre></td></tr></table></figure>
+<p>建造者模式与工厂模式区别</p>
+<ul>
+<li>建造者模式可以说是对工厂模式的扩展；</li>
+<li>工厂类提供了生产<strong>单个</strong>产品的功能，而建造者模式则可以将<strong>各种</strong>产品集中起来进行统一管理；</li>
+<li>工厂模式关注的是<strong>整个</strong>产品，建造者模式关注的是产品各组成<strong>部分</strong>的创建过程。</li>
+</ul>
+<p>建造者模式与模板模式区别</p>
+<ul>
+<li>建造者模式是<strong>创建型</strong>模式，模板模式是<strong>行为型</strong>模式；</li>
+<li>建造者模式使用<strong>组合</strong>，模板模式使用<strong>继承</strong>；</li>
+<li>建造者模式中的指挥者生产产品的方法construct类似模板模式的算法步骤。</li>
+</ul>
+<h2 id="1-6-原型Prototype"><a href="#1-6-原型Prototype" class="headerlink" title="1.6.  原型Prototype"></a>1.6.  原型Prototype</h2><p>分2种：</p>
+<ul>
+<li>普通原型模式：实现Cloneable接口及<strong>clone</strong>方法，</li>
+<li>带原型管理器：除实现clone方法外，增加原型管理器角色，该角色保持一个<strong>聚集</strong>（如Map），作为对所有原型对象的登记，这个角色提供必要的方法，供外界增加新的原型对象和取得已经登记过的原型对象。</li>
+</ul>
+<p>如果需要创建的原型对象数目较少而且比较固定的话，可以采取普通原型模式，如果要创建的原型对象数目不固定的话，采用原型管理器</p>
+<p>使用场景：当直接创建对象的代价比较大时，则采用这种模式。例如，一个对象需要在一个高代价的数据库操作之后被创建。</p>
+<h1 id="2-结构型模式"><a href="#2-结构型模式" class="headerlink" title="2.  结构型模式"></a>2.  结构型模式</h1><h2 id="2-1-适配器Adapter"><a href="#2-1-适配器Adapter" class="headerlink" title="2.1.  适配器Adapter"></a>2.1.  适配器Adapter</h2><p>将一个类的接口转换成客户希望的另外一个接口。Adapter模式使得原本由于接口不<strong>兼容</strong>而不能一起工作的那些类可以在一起工作。</p>
+<h3 id="2-1-1-类适配"><a href="#2-1-1-类适配" class="headerlink" title="2.1.1.  类适配"></a>2.1.1.  类适配</h3><p>继承旧类+实现新接口</p>
+<h3 id="2-1-2-对象适配"><a href="#2-1-2-对象适配" class="headerlink" title="2.1.2.  对象适配"></a>2.1.2.  对象适配</h3><p>持有旧类+实现新接口 </p>
+<h3 id="2-1-3-接口适配（缺省适配模式）"><a href="#2-1-3-接口适配（缺省适配模式）" class="headerlink" title="2.1.3.  接口适配（缺省适配模式）"></a>2.1.3.  接口适配（缺省适配模式）</h3><p><strong>适配器模式的用意</strong>是要改变源的接口，以便于目标接口相容。<strong>缺省适配的用意稍有不同</strong>，它是为了方便建立一个不平庸的适配器类而提供的一种平庸实现。</p>
+<p>方法：创建抽象类实现接口所有方法（适配器类），然后继承抽象类，实现部分方法。</p>
+<p>适用于当不希望实现一个接口中所有的方法，例如鲁智深是和尚，但只习武。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">interface 和尚&#123;吃斋，念佛，习武&#125;，</div><div class="line"></div><div class="line">Abstract 天星&#123;吃斋，念佛，习武&#125;，</div><div class="line"></div><div class="line">鲁智 extend 天星&#123;习武&#125;</div></pre></td></tr></table></figure>
+<h2 id="2-2-装饰Decorator"><a href="#2-2-装饰Decorator" class="headerlink" title="2.2.  装饰Decorator"></a>2.2.  装饰Decorator</h2><p>实现<strong>同一接口</strong>,持有原对象的<strong>引用</strong>（通过传参的方式），调用原对象同名方法内前后<strong>增加功能</strong>。</p>
+<p>例如：Spring 切面 在所有方法被调用时，记录日志。</p>
+<h2 id="2-3-代理Proxy"><a href="#2-3-代理Proxy" class="headerlink" title="2.3.  代理Proxy"></a>2.3.  代理Proxy</h2><p>类似装饰模式，代理持有且<strong>实例化</strong>原对象（比如：在代理构造方法中new原对象）</p>
+<p>代理模式的目的是：使用代理对象来<strong>控制</strong>对原有对象的访问</p>
+<h2 id="2-4-外观Facade"><a href="#2-4-外观Facade" class="headerlink" title="2.4.  外观Facade"></a>2.4.  外观Facade</h2><p>外观模式<strong>不涉及接口</strong>，解决类与类之间依赖关系，将依赖关系放到一个<strong>外观类</strong>中，类似spring，将类之间的关系写在配置文件中，如：电脑启动（CPU 内存硬盘），电脑是外观类，持有并实例化其他类。</p>
+<p>外观模式为系统提供一个<strong>统一的调用接口</strong>，使子系统更加容易使用。</p>
+<h2 id="2-5-桥接Bridge"><a href="#2-5-桥接Bridge" class="headerlink" title="2.5.  桥接Bridge"></a>2.5.  桥接Bridge</h2><p>桥（多维的其中一维抽象）持有原始类的接口（另外一维）的引用，通过调用桥的方法，调用原始类，桥接模式可以使多维度中各维度变化分离，使用组合将多维度联系起来，如：车（轿车，公交车）、路（公路，高速公路）；同一个游戏中不同型号的对象，在不同平台（PC，手机）画面的展现。适用于<strong>多维组合解耦</strong>。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">AbstractRoad&#123; </div><div class="line">	Vehicle v  </div><div class="line">	run()&#123;</div><div class="line">		v.run()</div><div class="line">	&#125;</div><div class="line">&#125;</div><div class="line">Highway extend AbstractRoad&#123;&#125;</div><div class="line">Freeway extend AbstractRoad&#123;&#125;</div><div class="line"></div><div class="line">interface Vehicle&#123; run()&#125;</div><div class="line">Car impl Vehicle&#123;run()&#125;</div><div class="line">Bus impl Vehicle&#123;run()&#125;</div></pre></td></tr></table></figure>
+<p>与适配器模式区别：</p>
+<ul>
+<li>适配器模式：改变已有的两个接口，使相容。先有两边的东西，再有适配器</li>
+<li>桥模式：分离抽象与实现，解决多维的变化问题。先有桥，再有两边的东西。</li>
+</ul>
+<h2 id="2-6-组合Composite"><a href="#2-6-组合Composite" class="headerlink" title="2.6.  组合Composite"></a>2.6.  组合Composite</h2><p>又称部分-整体模式，处理树形结构问题，将多个对象组合在一起进行操作，<strong>父子同类型</strong>，<strong>父持有子节点的集合</strong>。</p>
+<p>使得用户对单个对象和组合对象的使用具有一致性（同一结构）</p>
+<p>样例：文件系统：文件+目录</p>
+<h2 id="2-7-享元Flyweight"><a href="#2-7-享元Flyweight" class="headerlink" title="2.7.  享元Flyweight"></a>2.7.  享元Flyweight</h2><p>实现对象的共享，即共享池，实现面向大量对象请求时，对象复用，如：数据库连接池，可以减少内存的开销，通常与工厂模式一起使用，池持有对象的数组，当一个客户端请求时，工厂需要检查当前对象池中是否有符合条件的对象。</p>
+<ul>
+<li>享元对象包含共享的内部状态，又可以通过方法传参的方式传入外部状态。</li>
+<li><strong>享元工厂</strong>负责创建和管理享元对象，持有享元的集合</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">ChessFlyWeight&#123;</div><div class="line">	String Color;//共享的内部状态,</div><div class="line">	FlyweightImpl(String Color)&#123;      </div><div class="line">	&#125;</div><div class="line">	display(Coordinate c)&#123;//传入外部状态</div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>使用享元模式的条件： </p>
+<ol>
+<li>系统中有大量的对象，他们使系统的效率降低。 </li>
+<li>这些对象的状态可以分离出所需要的内外两部分。</li>
+</ol>
+<p>例子：String类的设计就是享元模式，当两个String 对象所包含的内容相同的时候，JVM 只创建一个String 对象对应这两个不同的对象引用。</p>
+<p>围棋的棋子，颜色一样，位置不一样，位置为外部对象Coordinate</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line">ChessFlyWeight&#123;</div><div class="line">	String Color;//共享的内部状态,</div><div class="line">	FlyweightImpl(String Color)&#123;      </div><div class="line">	&#125;</div><div class="line">	display(Coordinate c)&#123;//传入外部状态</div><div class="line">	&#125;</div><div class="line">&#125;</div><div class="line">public class Coordinate &#123;</div><div class="line">    private int x,y;</div><div class="line">&#125;</div><div class="line">public static void main(String[] args) &#123;</div><div class="line">        ChessFlyWeight chess1=ChessFlyWeightFactory.getChess(&quot;黑色&quot;);</div><div class="line">        ChessFlyWeight chess2=ChessFlyWeightFactory.getChess(&quot;黑色&quot;);</div><div class="line">        System.out.println(chess1);</div><div class="line">        System.out.println(chess2);</div><div class="line">        chess1.display(new Coordinate(10,10));</div><div class="line">        chess2.display(new Coordinate(20,20));</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h1 id="3-行为型模式"><a href="#3-行为型模式" class="headerlink" title="3.  行为型模式"></a>3.  行为型模式</h1><h2 id="3-1-父与子"><a href="#3-1-父与子" class="headerlink" title="3.1.  父与子"></a>3.1.  父与子</h2><h3 id="3-1-1-策略Strategy-表驱动模式"><a href="#3-1-1-策略Strategy-表驱动模式" class="headerlink" title="3.1.1.  策略Strategy(表驱动模式)"></a>3.1.1.  策略Strategy(表驱动模式)</h3><p>多用在算法决策系统，对算法封装，<strong>用户决定使用哪种算法</strong>，如：加减乘除实现同一接口、复杂的if else分支，可以把各种情况定义为字典-实现的映射，根据输入的字典，决定使用哪种算法。</p>
+<p>context:环境角色持有一个策略的引用</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">Content&#123;</div><div class="line">  Strategy stgy;</div><div class="line">  Content(Strategy stgy)&#123;</div><div class="line">    this.stgy=stgy;</div><div class="line">  &#125;</div><div class="line">  todo()&#123;</div><div class="line">    stgy.todo();</div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="3-1-2-模板方法Template-methed"><a href="#3-1-2-模板方法Template-methed" class="headerlink" title="3.1.2.  模板方法Template methed"></a>3.1.2.  模板方法Template methed</h3><p><strong>抽象类**</strong>定义算法结构**，子类实现算法步骤</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">AbstractClass&#123;</div><div class="line">  abstract step1();</div><div class="line">  abstract step2();</div><div class="line">  abstract step3();</div><div class="line">  templateMethed()&#123;</div><div class="line">   step1();</div><div class="line">   step2();</div><div class="line">   step3(); </div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="3-2-两类之间"><a href="#3-2-两类之间" class="headerlink" title="3.2.  两类之间"></a>3.2.  两类之间</h2><h3 id="3-2-1-观察者Observer"><a href="#3-2-1-观察者Observer" class="headerlink" title="3.2.1.  观察者Observer"></a>3.2.1.  观察者Observer</h3><p>被观察者持有观察者<strong>集合</strong>，提供register，delete，notify（当对象变化时，可以遍历集合，调用观察者的方法）</p>
+<h3 id="3-2-2-迭代器Iterator"><a href="#3-2-2-迭代器Iterator" class="headerlink" title="3.2.2.  迭代器Iterator"></a>3.2.2.  迭代器Iterator</h3><p>迭代器模式是与集合<strong>共生共死</strong>的，迭代器对集合对象进行遍历操作，迭代器持有集合对象,集合对象提供返回迭代器的方法（return new 迭代器(this集合对象)），或迭代器是集合的内部成员类，可以直接访问集合对象数据</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div></pre></td><td class="code"><pre><div class="line">interface Iterator &#123;</div><div class="line">     public boolean hasNext();</div><div class="line">     public Object next();</div><div class="line">&#125;</div><div class="line"></div><div class="line">ConcreteIterator implements Iterator &#123;</div><div class="line">     private List list = null;</div><div class="line">     private int index; </div><div class="line">     public ConcreteIterator(List list) &#123;//持有集合对象</div><div class="line">         super();</div><div class="line">         this.list = list;</div><div class="line">     &#125;</div><div class="line">      public boolean hasNext()&#123;</div><div class="line">      	return index &lt; list.getSize()</div><div class="line">      &#125;</div><div class="line">     public Object next()&#123;</div><div class="line">       		Object object = list.get(index);</div><div class="line">         index++;</div><div class="line">         return object;</div><div class="line">     &#125;</div><div class="line">&#125; </div><div class="line"></div><div class="line"> ArrayList impl List &#123;</div><div class="line">      public void add(Object obj);  </div><div class="line">      public Object get(int index);</div><div class="line">      public Iterator iterator()&#123;//返回迭代器</div><div class="line">      		return new ConcreteIterator(this);</div><div class="line">      &#125; </div><div class="line">      public int getSize();</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>样例：java Collection 返回Iterator 方法Iterator()</p>
+<h3 id="3-2-3-责任链Chain-of-responsibility"><a href="#3-2-3-责任链Chain-of-responsibility" class="headerlink" title="3.2.3.  责任链Chain of responsibility"></a>3.2.3.  责任链Chain of responsibility</h3><p>使多个对象都有机会处理请求，从而避免请求的发送者和接受者之间的耦合关系。<strong>处理者持有下一处理者的引用</strong>形成链，请求在这个链上传递，直到某一对象决定处理该请求。但是发出者并不清楚到底最终那个对象会处理该请求，责任链模式可以实现，在隐瞒客户端的情况下，对系统进行动态的调整。</p>
+<ul>
+<li>链表中每一个对象都可能而且可以成为入口，而不是必须从链头开始。</li>
+<li>如果是if else的分支，通常使用策略模式（表驱动模式）</li>
+<li>如果处理者有上下级关系时，可以考虑使用责任链，如：打牌出牌，流程审批，java异常机制catch顺序，Struts2连接器，tomcat的Filter</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">Handler&#123;</div><div class="line">  Handler nextHandler //持有下一处理者的引用</div><div class="line">  handleRequest()&#123;</div><div class="line">  	//todo or not todo something</div><div class="line">    nextHandler.handleRequest();</div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="3-2-4-命令Command"><a href="#3-2-4-命令Command" class="headerlink" title="3.2.4.  命令Command"></a>3.2.4.  命令Command</h3><p>将一个请求封装成一个对象，实现对命令请求者（Invoker）和命令实现者（Receiver）的<strong>解耦</strong>。</p>
+<p><strong>调用者-&gt;命令-&gt;执行者</strong>，调用者持有命令的引用，调用命令执行方法，命令持有执行者的引用，命令执行方法调用执行者的执行方法，例如：司令–&gt;命令–&gt;兵</p>
+<p> 使用场景：</p>
+<ul>
+<li>需要记录命令的日志</li>
+<li>请求者和实现者解耦，不交互</li>
+</ul>
+<h2 id="3-3-类状态"><a href="#3-3-类状态" class="headerlink" title="3.3.  类状态"></a>3.3.  类状态</h2><h3 id="3-3-1-备忘录Memento"><a href="#3-3-1-备忘录Memento" class="headerlink" title="3.3.1.  备忘录Memento"></a>3.3.1.  备忘录Memento</h3><p>用于备份恢复对象原先的状态，<strong>对象有创建备忘录，恢复备忘录的方法</strong>，备忘录包含需记录的对象的属性（多属性用Map） ，<strong>备忘录管理类</strong>持有备忘录的引用（多备忘录用MAP），提供和保存备忘录，样例：JDBC事务回滚，Ctrl+Z</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div></pre></td><td class="code"><pre><div class="line">Object&#123;</div><div class="line">state</div><div class="line">createMemento()&#123;</div><div class="line"> 		return new Memento(this.state);  </div><div class="line">	&#125;</div><div class="line">restoreMemento(Memento memento)&#123;</div><div class="line"> 		this.state=memento.getState();</div><div class="line">	&#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line">class Memento &#123;  </div><div class="line">    private String state = &quot;&quot;;  </div><div class="line">    public Memento(String state)&#123;  </div><div class="line">        this.state = state;  </div><div class="line">    &#125;  </div><div class="line">    public String getState() &#123;  </div><div class="line">        return state;  </div><div class="line">    &#125;  </div><div class="line">    public void setState(String state) &#123;  </div><div class="line">        this.state = state;  </div><div class="line">    &#125;  </div><div class="line">&#125;  </div><div class="line">MemoMgr&#123;</div><div class="line">    private Memento memento;  </div><div class="line">    public Memento getMemento()&#123;  </div><div class="line">        return memento;  </div><div class="line">    &#125;  </div><div class="line">    public void setMemento(Memento memento)&#123;  </div><div class="line">        this.memento = memento;  </div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="3-3-2-状态State"><a href="#3-3-2-状态State" class="headerlink" title="3.3.2.  状态State"></a>3.3.2.  状态State</h3><p>当一个对象有多个状态切换时，可以把状态抽象成类，不同状态执行不同操作，IF ELSE</p>
+<ul>
+<li>状态类：状态名+<strong>行为</strong>，</li>
+<li>环境类：定义客户感兴趣的接口。维护一个State子类的实例，这个实例定义当前状态。</li>
+</ul>
+<p>环境类和状态类之间存在一种<strong>双向关联</strong>关系，</p>
+<p>谁定义状态转换？</p>
+<ol>
+<li>如果下一个状态跟当前状态有关，各个具体的状态类对象负责状态的转换，</li>
+<li>如果下一个状态跟当前状态无关，就可以选择由上下文来决定状态转换</li>
+</ol>
+<p>例子：门开关状态，酒店房间状态</p>
+<p>与策略模式区别：</p>
+<ul>
+<li>策略封装多个平行的多变的实现方式</li>
+<li>状态封装内部变化，以外部行为表现出来</li>
+</ul>
+<h2 id="3-4-中间类"><a href="#3-4-中间类" class="headerlink" title="3.4.  中间类"></a>3.4.  中间类</h2><h3 id="3-4-1-访问者Visitor"><a href="#3-4-1-访问者Visitor" class="headerlink" title="3.4.1.  访问者Visitor"></a>3.4.1.  访问者Visitor</h3><p>可以在不改变对象结构的情况下给对象增加新的操作（即访问者的方法）。被访问的元素有accept方法，以访问者为参数，调用访问者的访问方法，访问者的访问方法以被访问对象为参数，<strong>双重分派</strong>（一个方法根据两个宗量（方法接收者和入参）的类型来决定执行不同的代码）</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">Element：accept(Visitor v)&#123;  </div><div class="line">	v.visit(this);  </div><div class="line">&#125;</div><div class="line"></div><div class="line">Visitor: visit(Elemente)&#123;</div><div class="line">	dosth  </div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>即在不改变Element的情况下，为Element增加了dosth的操作。</p>
+<p><strong>接收访问者的同时，调用访问者访问方法</strong>：accept-&gt;visit</p>
+<h3 id="3-4-2-中介者Mediator"><a href="#3-4-2-中介者Mediator" class="headerlink" title="3.4.2.  中介者Mediator"></a>3.4.2.  中介者Mediator</h3><p>用于多个类之间相互交互，网状变星状，中介者使各个对象不需要显示地相互引用，从而使其耦合性松散，而且可以独立地改变他们之间的交互。</p>
+<ul>
+<li>中介持有所有对象的引用；</li>
+<li>对象持有中介的引用；</li>
+<li>中介用来封装<strong>行为</strong>。</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">Mediator&#123; </div><div class="line">	ColleagueA a;</div><div class="line">	ColleagueBb;</div><div class="line">	AaffectB();</div><div class="line">	BaffectA();</div><div class="line">&#125;</div><div class="line"></div><div class="line">ColleagueA</div><div class="line">	Mediator m</div><div class="line">	dosth()&#123;</div><div class="line">		m. AaffectB();</div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>缺点：中介类易变上帝类</p>
+<p>与Façade区别</p>
+<ul>
+<li>Façade为一组内聚的对象，<strong>提供一个统一的外部接口</strong>，</li>
+<li>Mediator为在一组互相协作的对象内部起<strong>协调</strong>作用。</li>
+</ul>
+<p>样例：QQ群</p>
+<h3 id="3-4-3-解释器Interpreter"><a href="#3-4-3-解释器Interpreter" class="headerlink" title="3.4.3.  解释器Interpreter"></a>3.4.3.  解释器Interpreter</h3><p>对算法进行最小化拆分，用于编译器开发，解释器模式根据问题将算法和参与运算的值组合成一个树型结构，非叶子节点（NonterminalExpression）为算法，叶子节点（TerminalExpression）为参与运算的值，最后通过遍历这颗树求得问题的解。</p>
+<h1 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h1><p>method factory：interface+multiple factory</p>
+<p>Abstract factory：multiple method create multiple product</p>
+<p>builder：build part，director { builder b, construct(){ b.A(); b.B(); b.C(); }  }</p>
+<p>singleton：private instance and constructor</p>
+<p>prototype：clone / clone+collection </p>
+<p>adapter：extend / hold reference</p>
+<p>decorator：hold reference</p>
+<p>proxy：new instance</p>
+<p>facade：new all instance</p>
+<p>bridge：multi-dimension decoupling，one dimension hold another’s reference</p>
+<p>composite：one structure，parent  can get child</p>
+<p>flyweight：factory（create、get） + collection</p>
+<p>strategy：strategy interface + context chose one  strategy reference</p>
+<p>template method：abstract class contain abstract step method，define structure of step sequence</p>
+<p>observer：subject hold collection of reference of observer，register，delete，notify(call observer‘s method)</p>
+<p>iterator：collection.iterator(this)，iterator hold reference of collection </p>
+<p>chain of responsibility：handler–&gt;next handler</p>
+<p>command：invoker.do–&gt;command.do–&gt; receiver.do()</p>
+<p>memento：create + restore，mementoMgr–&gt;memento</p>
+<p>state：state effect handler，context-&gt;state</p>
+<p>visitor：Subject.accept(visitor){ visitor.visit(this) }</p>
+<p>mediator：encapsulate how a set of objects interact   A&lt;–&gt;mediator&lt;–&gt;B</p>
+<p>interpret：TerminalExpress，NonTerminalExpress</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="http://oulmk4pq1.bkt.clouddn.com/rockynote.png" alt="老祁 wechat" style="width: 200px; max-width: 100%;"/>
+    <div>扫一扫，用手机访问本站</div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div></div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="http://oulmk4pq1.bkt.clouddn.com/wechat_in.png" alt="老祁 WeChat Pay"/>
+        <p>微信打赏</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="http://oulmk4pq1.bkt.clouddn.com/alipay_in.png" alt="老祁 Alipay"/>
+        <p>支付宝打赏</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/设计模式/" rel="tag"># 设计模式</a>
+          
+            <a href="/tags/design-pattern/" rel="tag"># design pattern</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/02/08/java-GC/" rel="next" title="java-GC">
+                <i class="fa fa-chevron-left"></i> java-GC
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/02/08/Future-And-Worker-Pattern/" rel="prev" title="多线程并发模式">
+                多线程并发模式 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+<span class="jiathis_txt">分享到：</span>
+<a class="jiathis_button_fav">收藏夹</a>
+<a class="jiathis_button_copy">复制网址</a>
+<a class="jiathis_button_email">邮件</a>
+<a class="jiathis_button_weixin">微信</a>
+<a class="jiathis_button_qzone">QQ空间</a>
+<a class="jiathis_button_tqq">腾讯微薄</a>
+<a class="jiathis_button_douban">豆瓣</a>
+<a class="jiathis_button_share">一键分享</a>
+
+<a href="http://www.jiathis.com/share?uid=2140465" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+var jiathis_config={
+  data_track_clickback:true,
+  summary:"",
+  shortUrl:false,
+  hideMore:false
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=2141554" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="老祁" />
+          <p class="site-author-name" itemprop="name">老祁</p>
+           
+              <p class="site-description motion-element" itemprop="description">老祁的笔记</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">12</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">25</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/xingsheq" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/iterator" target="_blank" title="Weibo">
+                  
+                    <i class="fa fa-fw fa-weibo"></i>
+                  
+                    
+                      Weibo
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-link"></i>
+              友情链接
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://qijiaoshou.com" title="祁较瘦" target="_blank">祁较瘦</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#设计模式的六大原则SOLID"><span class="nav-number">1.</span> <span class="nav-text">设计模式的六大原则SOLID</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#设计模式分类"><span class="nav-number">2.</span> <span class="nav-text">设计模式分类</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#设计模式类图"><span class="nav-number">3.</span> <span class="nav-text">设计模式类图</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#1-创建型模式"><span class="nav-number">4.</span> <span class="nav-text">1.  创建型模式</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-1-简单工厂Factory"><span class="nav-number">4.1.</span> <span class="nav-text">1.1.  简单工厂Factory</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-1-普通工厂"><span class="nav-number">4.1.1.</span> <span class="nav-text">1.1.1.  普通工厂</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-2-多方法工厂"><span class="nav-number">4.1.2.</span> <span class="nav-text">1.1.2.  多方法工厂</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-3-静态工厂"><span class="nav-number">4.1.3.</span> <span class="nav-text">1.1.3.  静态工厂</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-2-工厂方法FactoryMethod"><span class="nav-number">4.2.</span> <span class="nav-text">1.2.  工厂方法FactoryMethod</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-3-抽象工厂AbstractFactory"><span class="nav-number">4.3.</span> <span class="nav-text">1.3.  抽象工厂AbstractFactory</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-4-单例Singleton"><span class="nav-number">4.4.</span> <span class="nav-text">1.4.  单例Singleton</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-5-建造者Builder"><span class="nav-number">4.5.</span> <span class="nav-text">1.5.  建造者Builder</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-6-原型Prototype"><span class="nav-number">4.6.</span> <span class="nav-text">1.6.  原型Prototype</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#2-结构型模式"><span class="nav-number">5.</span> <span class="nav-text">2.  结构型模式</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#2-1-适配器Adapter"><span class="nav-number">5.1.</span> <span class="nav-text">2.1.  适配器Adapter</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-1-类适配"><span class="nav-number">5.1.1.</span> <span class="nav-text">2.1.1.  类适配</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-2-对象适配"><span class="nav-number">5.1.2.</span> <span class="nav-text">2.1.2.  对象适配</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-1-3-接口适配（缺省适配模式）"><span class="nav-number">5.1.3.</span> <span class="nav-text">2.1.3.  接口适配（缺省适配模式）</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-2-装饰Decorator"><span class="nav-number">5.2.</span> <span class="nav-text">2.2.  装饰Decorator</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-3-代理Proxy"><span class="nav-number">5.3.</span> <span class="nav-text">2.3.  代理Proxy</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-4-外观Facade"><span class="nav-number">5.4.</span> <span class="nav-text">2.4.  外观Facade</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-5-桥接Bridge"><span class="nav-number">5.5.</span> <span class="nav-text">2.5.  桥接Bridge</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-6-组合Composite"><span class="nav-number">5.6.</span> <span class="nav-text">2.6.  组合Composite</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-7-享元Flyweight"><span class="nav-number">5.7.</span> <span class="nav-text">2.7.  享元Flyweight</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#3-行为型模式"><span class="nav-number">6.</span> <span class="nav-text">3.  行为型模式</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#3-1-父与子"><span class="nav-number">6.1.</span> <span class="nav-text">3.1.  父与子</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-1-策略Strategy-表驱动模式"><span class="nav-number">6.1.1.</span> <span class="nav-text">3.1.1.  策略Strategy(表驱动模式)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-1-2-模板方法Template-methed"><span class="nav-number">6.1.2.</span> <span class="nav-text">3.1.2.  模板方法Template methed</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-2-两类之间"><span class="nav-number">6.2.</span> <span class="nav-text">3.2.  两类之间</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-1-观察者Observer"><span class="nav-number">6.2.1.</span> <span class="nav-text">3.2.1.  观察者Observer</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-2-迭代器Iterator"><span class="nav-number">6.2.2.</span> <span class="nav-text">3.2.2.  迭代器Iterator</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-3-责任链Chain-of-responsibility"><span class="nav-number">6.2.3.</span> <span class="nav-text">3.2.3.  责任链Chain of responsibility</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-2-4-命令Command"><span class="nav-number">6.2.4.</span> <span class="nav-text">3.2.4.  命令Command</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-3-类状态"><span class="nav-number">6.3.</span> <span class="nav-text">3.3.  类状态</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-1-备忘录Memento"><span class="nav-number">6.3.1.</span> <span class="nav-text">3.3.1.  备忘录Memento</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-3-2-状态State"><span class="nav-number">6.3.2.</span> <span class="nav-text">3.3.2.  状态State</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-4-中间类"><span class="nav-number">6.4.</span> <span class="nav-text">3.4.  中间类</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-1-访问者Visitor"><span class="nav-number">6.4.1.</span> <span class="nav-text">3.4.1.  访问者Visitor</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-2-中介者Mediator"><span class="nav-number">6.4.2.</span> <span class="nav-text">3.4.2.  中介者Mediator</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-4-3-解释器Interpreter"><span class="nav-number">6.4.3.</span> <span class="nav-text">3.4.3.  解释器Interpreter</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Summary"><span class="nav-number">7.</span> <span class="nav-text">Summary</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">老祁</span>
+
+  
+</div>
+
+
+  <div class="powered-by">
+    由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+  </div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">
+    主题 &mdash;
+    <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+      NexT.Pisces
+    </a>
+  </div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+  <script src="https://cdn1.lncld.net/static/js/av-core-mini-0.6.4.js"></script>
+  <script>AV.initialize("XI4CVU7uevOpiu2KjmNMjcd4-gzGzoHsz", "tkrUmr1nl8g9tydH1yf7LJiQ");</script>
+  <script>
+    function showTime(Counter) {
+      var query = new AV.Query(Counter);
+      var entries = [];
+      var $visitors = $(".leancloud_visitors");
+
+      $visitors.each(function () {
+        entries.push( $(this).attr("id").trim() );
+      });
+
+      query.containedIn('url', entries);
+      query.find()
+        .done(function (results) {
+          var COUNT_CONTAINER_REF = '.leancloud-visitors-count';
+
+          if (results.length === 0) {
+            $visitors.find(COUNT_CONTAINER_REF).text(0);
+            return;
+          }
+
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.get('url');
+            var time = item.get('time');
+            var element = document.getElementById(url);
+
+            $(element).find(COUNT_CONTAINER_REF).text(time);
+          }
+          for(var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = document.getElementById(url);
+            var countSpan = $(element).find(COUNT_CONTAINER_REF);
+            if( countSpan.text() == '') {
+              countSpan.text(0);
+            }
+          }
+        })
+        .fail(function (object, error) {
+          console.log("Error: " + error.code + " " + error.message);
+        });
+    }
+
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+      var query = new AV.Query(Counter);
+
+      query.equalTo("url", url);
+      query.find({
+        success: function(results) {
+          if (results.length > 0) {
+            var counter = results[0];
+            counter.fetchWhenSave(true);
+            counter.increment("time");
+            counter.save(null, {
+              success: function(counter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(counter.get('time'));
+              },
+              error: function(counter, error) {
+                console.log('Failed to save Visitor num, with error message: ' + error.message);
+              }
+            });
+          } else {
+            var newcounter = new Counter();
+            /* Set ACL */
+            var acl = new AV.ACL();
+            acl.setPublicReadAccess(true);
+            acl.setPublicWriteAccess(true);
+            newcounter.setACL(acl);
+            /* End Set ACL */
+            newcounter.set("title", title);
+            newcounter.set("url", url);
+            newcounter.set("time", 1);
+            newcounter.save(null, {
+              success: function(newcounter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(newcounter.get('time'));
+              },
+              error: function(newcounter, error) {
+                console.log('Failed to create');
+              }
+            });
+          }
+        },
+        error: function(error) {
+          console.log('Error:' + error.code + " " + error.message);
+        }
+      });
+    }
+
+    $(function() {
+      var Counter = AV.Object.extend("Counter");
+      if ($('.leancloud_visitors').length == 1) {
+        addCount(Counter);
+      } else if ($('.post-title-link').length > 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

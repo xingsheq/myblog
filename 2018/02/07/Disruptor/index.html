@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="disruptor,cas," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="基础知识 缓存伪共享+缓存行填充 UNSAFE类方法功能   乐观锁CAS原子操作 Volatile+内存屏障  交互图 说明：  箭头表示持有或等于引用对象，无箭头表示持有的变量 源码并不是官网提供的源码，而是开发工具反编译出来的   dependentSequence：前置消费者消费到的seq，有多个时使用FixedSequenceGroup，取最小的，若没有前置消费者，则为生产者cursor">
+<meta name="keywords" content="disruptor,cas">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Disruptor源码解析">
+<meta property="og:url" content="http://rockynote.com/2018/02/07/Disruptor/index.html">
+<meta property="og:site_name" content="老祁笔记">
+<meta property="og:description" content="基础知识 缓存伪共享+缓存行填充 UNSAFE类方法功能   乐观锁CAS原子操作 Volatile+内存屏障  交互图 说明：  箭头表示持有或等于引用对象，无箭头表示持有的变量 源码并不是官网提供的源码，而是开发工具反编译出来的   dependentSequence：前置消费者消费到的seq，有多个时使用FixedSequenceGroup，取最小的，若没有前置消费者，则为生产者cursor">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://oulmk4pq1.bkt.clouddn.com/disruptor/disruptor.png">
+<meta property="og:updated_time" content="2018-03-05T07:15:08.232Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Disruptor源码解析">
+<meta name="twitter:description" content="基础知识 缓存伪共享+缓存行填充 UNSAFE类方法功能   乐观锁CAS原子操作 Volatile+内存屏障  交互图 说明：  箭头表示持有或等于引用对象，无箭头表示持有的变量 源码并不是官网提供的源码，而是开发工具反编译出来的   dependentSequence：前置消费者消费到的seq，有多个时使用FixedSequenceGroup，取最小的，若没有前置消费者，则为生产者cursor">
+<meta name="twitter:image" content="http://oulmk4pq1.bkt.clouddn.com/disruptor/disruptor.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://rockynote.com/2018/02/07/Disruptor/"/>
+
+
+
+
+
+  <title>Disruptor源码解析 | 老祁笔记</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-105730821-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">老祁笔记</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Rocky's notes</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://rockynote.com/2018/02/07/Disruptor/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="老祁">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="老祁笔记">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Disruptor源码解析</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-02-07T07:47:19+00:00">
+                2018-02-07
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/3rd-party-jars/" itemprop="url" rel="index">
+                    <span itemprop="name">3rd party jars</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+             <span id="/2018/02/07/Disruptor/" class="leancloud_visitors" data-flag-title="Disruptor源码解析">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数&#58;</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="基础知识"><a href="#基础知识" class="headerlink" title="基础知识"></a>基础知识</h1><ul>
+<li>缓存伪共享+缓存行填充</li>
+<li>UNSAFE类方法功能</li>
+</ul>
+<ul>
+<li>乐观锁CAS原子操作</li>
+<li>Volatile+内存屏障</li>
+</ul>
+<h1 id="交互图"><a href="#交互图" class="headerlink" title="交互图"></a>交互图</h1><p><img src="http://oulmk4pq1.bkt.clouddn.com/disruptor/disruptor.png" alt=""></p>
+<p>说明：</p>
+<ul>
+<li>箭头表示持有或等于引用对象，无箭头表示持有的变量</li>
+<li>源码并不是官网提供的源码，而是开发工具反编译出来的</li>
+</ul>
+<ul>
+<li>dependentSequence：前置消费者消费到的seq，有多个时使用FixedSequenceGroup，取最小的，若没有前置消费者，则为生产者cursor</li>
+<li>Sequence[] gatingSequence：消费者链上最后一个消费者组消费到的seqs</li>
+<li>核心代码：<ul>
+<li>Sequencer.next()：生产者获得可用seq，发布事件</li>
+<li>Processor.run()–&gt;sequenceBarrier.waitFor()–&gt;waitStrategy.waitFor()：消费者获得最大可用seq，读事件</li>
+</ul>
+</li>
+</ul>
+<h2 id="生产者"><a href="#生产者" class="headerlink" title="生产者"></a>生产者</h2><ul>
+<li>生产者持有RingBuffer的引用，调用ringBuffer.publish方法—-&gt;sequencer.next(); sequencer.publish()</li>
+<li>Sequencer持有消费者链上最后一个消费者（组）消费到的seq（s），及cursor（当前生产者生产到的seq）<ul>
+<li>next()方法判断生产者请求的seq的覆盖点是否覆盖了(&gt;)最慢消费者的seq，是则唤醒消费者并休眠，直到不覆盖返回请求的seq</li>
+<li>publish()方法懒更新cursor：set并不立即可见，</li>
+</ul>
+</li>
+</ul>
+<h2 id="消费者"><a href="#消费者" class="headerlink" title="消费者"></a>消费者</h2><p>Processor是消费者线程类，持有EventHandler做具体事件处理工作，记录当前消费到的seq，主要逻辑在run()方法：</p>
+<ul>
+<li>循环请求next=seq+1</li>
+</ul>
+<ul>
+<li>调用sequenceBarrier.waitFor(next) 获得当前可消费的publishedSequence（小于等于cursor和dependentSequence，且发布了时间）<ul>
+<li>内部实际是调用waitStrategy.waitFor(next)获得最慢消费者消费到的seq，称为availableSequence<ul>
+<li>dependentSequence.get()&gt;next?return availableSequence=dependentSequence.get():继续循环判断</li>
+<li>有些waitStrategy会先判断next和生产者cursor大小，直到next&lt;=cursor，再判断dependentSequence与next</li>
+</ul>
+</li>
+<li>若此时availableSequence&gt;=next（可能存在批量消费，未被生产者再次写入事件），获得已写入事件的最大seq：sequencer.getHighestPublishedSequence(sequence, availableSequence);</li>
+<li>若availableSequence&lt;next,返回seq//根据waitStrategy.waitFor的代码，貌似不会出现这种情况</li>
+</ul>
+</li>
+<li>publishedSequence&gt;=next：处理next-&gt;publishedSequence之间的事件</li>
+<li>publishedSequence&lt;next：更新cursor=publishedSequence</li>
+</ul>
+<h1 id="source"><a href="#source" class="headerlink" title="source"></a>source</h1><h2 id="Sequence"><a href="#Sequence" class="headerlink" title="Sequence"></a>Sequence</h2><ul>
+<li>缓存行填充,填充14个long</li>
+<li>protected volatile long value</li>
+<li>set：延迟可见，UNSAFE.putOrderedLong(this, VALUE_OFFSET, value);</li>
+<li>setVolatile：理解可见，UNSAFE.putLongVolatile(this, VALUE_OFFSET, value);</li>
+<li>compareAndSet：</li>
+</ul>
+<h3 id="FixedSequenceGroup"><a href="#FixedSequenceGroup" class="headerlink" title="FixedSequenceGroup"></a>FixedSequenceGroup</h3><ul>
+<li>extends Sequence</li>
+<li>private final Sequence[] sequences</li>
+<li>重新get方法</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">public long get() &#123;</div><div class="line">        return Util.getMinimumSequence(this.sequences);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>用于设置消费者的前置消费者seq，当消费者有多个前置消费者时使用</p>
+<p>new ProcessingSequenceBarrier(){</p>
+<p>​    //当dependentSequences.length&gt;1时</p>
+<p>​    dependentSequence =new FixedSequenceGroup</p>
+<p>}</p>
+<h2 id="Sequencer"><a href="#Sequencer" class="headerlink" title="Sequencer"></a>Sequencer</h2><p>生产者与消费者的桥梁,生成消费者屏障barrier：</p>
+<p>（1）消费者屏障barrier持有Sequencer及Sequencer的cursor；</p>
+<p>（2）Sequencer持有消费者链上最后一个消费者组消费到的seqs，当生产者申请写入的seq覆盖了最慢消费者的seq时，阻塞等待；</p>
+<p>（3）发布时事件时更新cursor，并通知消费者线程</p>
+<p>（4）生产者先获得next()，再发布事件，next()方法判断nextSeq是否覆盖最慢消费者的seqs，如果是，则阻塞等待。</p>
+<p>（5）next()时，this.cursor.setVolatile(nextValue)更新生产者cursor=上次请求成功的seq，其他线程立即看到变更，pulish()时，this.cursor.set(sequence);//set方法不保证其他线程立即看到变更，所以发布事件后，并不保证消费者可以立即知道并消费，只有在请求下一个槽位时，消费者可立即看到已发布事件的上一槽位。这部分不知道理解是否有误</p>
+<p>重要属性及方法：</p>
+<ul>
+<li>protected final Sequence cursor = new Sequence(-1L)生产者生产到的最大seq</li>
+<li>protected volatile Sequence[] gatingSequences//消费者链上最后一个消费者组消费到的seqs</li>
+<li>next()</li>
+<li>newBarrier()-&gt;new ProcessingSequenceBarrier(this, this.waitStrategy, this.cursor, sequencesToTrack);</li>
+</ul>
+<h3 id="AbstractSequencer"><a href="#AbstractSequencer" class="headerlink" title="AbstractSequencer"></a>AbstractSequencer</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div></pre></td><td class="code"><pre><div class="line">public abstract class AbstractSequencer implements Sequencer &#123;</div><div class="line">    private static final AtomicReferenceFieldUpdater&lt;AbstractSequencer, Sequence[]&gt; SEQUENCE_UPDATER = AtomicReferenceFieldUpdater.newUpdater(AbstractSequencer.class, Sequence[].class, &quot;gatingSequences&quot;);//原子更新需要跟踪的消费者seq,gatingSequences</div><div class="line">    protected final int bufferSize;//ringbuffer大小</div><div class="line">    protected final WaitStrategy waitStrategy;//等待策略</div><div class="line">    protected final Sequence cursor = new Sequence(-1L);//生产者生产到的seq</div><div class="line">    protected volatile Sequence[] gatingSequences = new Sequence[0];//需跟踪的消费者组消费到的seqs</div><div class="line"></div><div class="line">    public AbstractSequencer(int bufferSize, WaitStrategy waitStrategy) &#123;</div><div class="line">        if(bufferSize &lt; 1) &#123;</div><div class="line">            throw new IllegalArgumentException(&quot;bufferSize must not be less than 1&quot;);</div><div class="line">        &#125; else if(Integer.bitCount(bufferSize) != 1) &#123;//size必须是2的次方</div><div class="line">            throw new IllegalArgumentException(&quot;bufferSize must be a power of 2&quot;);</div><div class="line">        &#125; else &#123;</div><div class="line">            this.bufferSize = bufferSize;</div><div class="line">            this.waitStrategy = waitStrategy;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public final long getCursor() &#123;</div><div class="line">        return this.cursor.get();</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public final int getBufferSize() &#123;</div><div class="line">        return this.bufferSize;</div><div class="line">    &#125;</div><div class="line">    //原子添加需跟踪的前置消费者seq到数组</div><div class="line">    public final void addGatingSequences(Sequence... gatingSequences) &#123;</div><div class="line">        SequenceGroups.addSequences(this, SEQUENCE_UPDATER, this, gatingSequences);</div><div class="line">    &#125;</div><div class="line">    //原子删除需跟踪的前置消费者seq</div><div class="line">    public boolean removeGatingSequence(Sequence sequence) &#123;</div><div class="line">        return SequenceGroups.removeSequence(this, SEQUENCE_UPDATER, sequence);</div><div class="line">    &#125;</div><div class="line">    //获得前置消费者中消费最慢的seq</div><div class="line">    public long getMinimumSequence() &#123;</div><div class="line">        return Util.getMinimumSequence(this.gatingSequences, this.cursor.get());</div><div class="line">    &#125;</div><div class="line">    //生成消费者屏障，指定前置消费者seq</div><div class="line">    public SequenceBarrier newBarrier(Sequence... sequencesToTrack) &#123;</div><div class="line">        return new ProcessingSequenceBarrier(this, this.waitStrategy, this.cursor, sequencesToTrack);</div><div class="line">    &#125;</div><div class="line">    //不建议使用</div><div class="line">    public &lt;T&gt; EventPoller&lt;T&gt; newPoller(DataProvider&lt;T&gt; dataProvider, Sequence... gatingSequences) &#123;</div><div class="line">        return EventPoller.newInstance(dataProvider, this, new Sequence(), this.cursor, gatingSequences);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public String toString() &#123;</div><div class="line">        return &quot;AbstractSequencer&#123;waitStrategy=&quot; + this.waitStrategy + &quot;, cursor=&quot; + this.cursor + &quot;, gatingSequences=&quot; + Arrays.toString(this.gatingSequences) + &apos;&#125;&apos;;</div><div class="line">    &#125;</div><div class="line"> &#125;</div></pre></td></tr></table></figure>
+<h3 id="SingleProducerSequencer"><a href="#SingleProducerSequencer" class="headerlink" title="SingleProducerSequencer"></a>SingleProducerSequencer</h3><p>单线程写数据时使用</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div><div class="line">104</div><div class="line">105</div><div class="line">106</div><div class="line">107</div><div class="line">108</div><div class="line">109</div></pre></td><td class="code"><pre><div class="line">public final class SingleProducerSequencer extends SingleProducerSequencerFields &#123;</div><div class="line">    protected long p1;//缓存行填充</div><div class="line">    protected long p2;</div><div class="line">    protected long p3;</div><div class="line">    protected long p4;</div><div class="line">    protected long p5;</div><div class="line">    protected long p6;</div><div class="line">    protected long p7;</div><div class="line"></div><div class="line">    public SingleProducerSequencer(int bufferSize, WaitStrategy waitStrategy) &#123;</div><div class="line">        super(bufferSize, waitStrategy);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public boolean hasAvailableCapacity(int requiredCapacity) &#123;</div><div class="line">        return this.hasAvailableCapacity(requiredCapacity, false);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    private boolean hasAvailableCapacity(int requiredCapacity, boolean doStore) &#123;</div><div class="line">        long nextValue = this.nextValue;//上次请求成功的seq</div><div class="line">        //覆盖点：请求的个数+当前位置，超过一圈时，减去bufferSize=需要覆盖的上一圈位置</div><div class="line">        long wrapPoint = nextValue + (long)requiredCapacity - (long)this.bufferSize;</div><div class="line">        long cachedGatingSequence = this.cachedValue;//上次请求时，缓存记录的最慢消费者seq，只有在覆盖点要覆盖他时，才再次计算，计算完后，再次判断是否覆盖</div><div class="line">        //覆盖了消费者未消费的位置</div><div class="line">        if(wrapPoint &gt; cachedGatingSequence || cachedGatingSequence &gt; nextValue) &#123;</div><div class="line">            if(doStore) &#123;//是否要写事件</div><div class="line">                this.cursor.setVolatile(nextValue);//更新生产者cursor=上次请求成功的seq，其他线程立即看到变更</div><div class="line">            &#125;</div><div class="line">            //获得最慢消费者的seq</div><div class="line">            long minSequence = Util.getMinimumSequence(this.gatingSequences, nextValue);</div><div class="line">            this.cachedValue = minSequence;</div><div class="line">            if(wrapPoint &gt; minSequence) &#123;</div><div class="line">                return false;</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        return true;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public long next() &#123;</div><div class="line">        return this.next(1);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public long next(int n) &#123;//请求几个位置</div><div class="line">        if(n &lt; 1) &#123;</div><div class="line">            throw new IllegalArgumentException(&quot;n must be &gt; 0&quot;);</div><div class="line">        &#125; else &#123;</div><div class="line">            long nextValue = this.nextValue;//上次next()成功的seq</div><div class="line">            long nextSequence = nextValue + (long)n;//本次请求到的seq</div><div class="line">            long wrapPoint = nextSequence - (long)this.bufferSize;//覆盖点</div><div class="line">            long cachedGatingSequence = this.cachedValue;//上次请求时，缓存记录的最慢消费者seq，只有在覆盖点要覆盖他时，才再次计算，计算完后，再次判断是否覆盖</div><div class="line">            if(wrapPoint &gt; cachedGatingSequence || cachedGatingSequence &gt; nextValue) &#123;</div><div class="line">                this.cursor.setVolatile(nextValue);//设置cursor=上次请求成功的seq，其他线程立即看到变更</div><div class="line"></div><div class="line">                long minSequence;</div><div class="line">                while(wrapPoint &gt; (minSequence = Util.getMinimumSequence(this.gatingSequences, nextValue))) &#123;</div><div class="line">                    this.waitStrategy.signalAllWhenBlocking();</div><div class="line">                    LockSupport.parkNanos(1L);</div><div class="line">                &#125;</div><div class="line"></div><div class="line">                this.cachedValue = minSequence;</div><div class="line">            &#125;</div><div class="line"></div><div class="line">            this.nextValue = nextSequence;//更新生产到的seq</div><div class="line">            return nextSequence;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public long tryNext() throws InsufficientCapacityException &#123;</div><div class="line">        return this.tryNext(1);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public long tryNext(int n) throws InsufficientCapacityException &#123;</div><div class="line">        if(n &lt; 1) &#123;</div><div class="line">            throw new IllegalArgumentException(&quot;n must be &gt; 0&quot;);</div><div class="line">        &#125; else if(!this.hasAvailableCapacity(n, true)) &#123;</div><div class="line">            throw InsufficientCapacityException.INSTANCE;</div><div class="line">        &#125; else &#123;</div><div class="line">            long nextSequence = this.nextValue += (long)n;</div><div class="line">            return nextSequence;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public long remainingCapacity() &#123;</div><div class="line">        long nextValue = this.nextValue;</div><div class="line">        long consumed = Util.getMinimumSequence(this.gatingSequences, nextValue);</div><div class="line">        return (long)this.getBufferSize() - (nextValue - consumed);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public void claim(long sequence) &#123;</div><div class="line">        this.nextValue = sequence;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public void publish(long sequence) &#123;</div><div class="line">        this.cursor.set(sequence);//set方法不保证其他线程立即看到变更</div><div class="line">        this.waitStrategy.signalAllWhenBlocking();</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public void publish(long lo, long hi) &#123;</div><div class="line">        this.publish(hi);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public boolean isAvailable(long sequence) &#123;</div><div class="line">        return sequence &lt;= this.cursor.get();</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public long getHighestPublishedSequence(long lowerBound, long availableSequence) &#123;</div><div class="line">        return availableSequence;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="MultiProducerSequencer"><a href="#MultiProducerSequencer" class="headerlink" title="MultiProducerSequencer"></a>MultiProducerSequencer</h3><p>多线程写数据时使用，与单线程不同处：</p>
+<ol>
+<li><p>由于是多线程，需对共享变量使用原子操作</p>
+<ul>
+<li>next()时，未覆盖消费者seq时，尝试set Cursor，使用原子操作：cursor.compareAndSet(current, next)</li>
+<li>如果失败，获得当前cursor位置，使用原子操作：current = this.cursor.get();计算覆盖点</li>
+<li>获得cachedGatingSequence，使用原子操作：this.gatingSequenceCache.get();</li>
+<li>设置cachedGatingSequence，使用原子操作： this.gatingSequenceCache.set(Util.getMinimumSequence(this.gatingSequences, current));</li>
+</ul>
+</li>
+<li>新增int[] availableBuffer记录ringbuffer的槽位是否已写入事件，作为map使用，key=槽位内存地址，value=圈数，如果请求的seq对应圈数和int[]存的一样，则表示已写入事件</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div><div class="line">104</div><div class="line">105</div><div class="line">106</div><div class="line">107</div><div class="line">108</div><div class="line">109</div><div class="line">110</div><div class="line">111</div><div class="line">112</div><div class="line">113</div><div class="line">114</div><div class="line">115</div><div class="line">116</div><div class="line">117</div><div class="line">118</div><div class="line">119</div><div class="line">120</div><div class="line">121</div><div class="line">122</div><div class="line">123</div><div class="line">124</div><div class="line">125</div><div class="line">126</div><div class="line">127</div><div class="line">128</div><div class="line">129</div><div class="line">130</div><div class="line">131</div><div class="line">132</div><div class="line">133</div><div class="line">134</div><div class="line">135</div><div class="line">136</div><div class="line">137</div><div class="line">138</div><div class="line">139</div><div class="line">140</div><div class="line">141</div><div class="line">142</div><div class="line">143</div><div class="line">144</div><div class="line">145</div><div class="line">146</div><div class="line">147</div><div class="line">148</div><div class="line">149</div><div class="line">150</div><div class="line">151</div><div class="line">152</div><div class="line">153</div><div class="line">154</div><div class="line">155</div><div class="line">156</div><div class="line">157</div><div class="line">158</div><div class="line">159</div><div class="line">160</div><div class="line">161</div><div class="line">162</div><div class="line">163</div><div class="line">164</div><div class="line">165</div><div class="line">166</div><div class="line">167</div><div class="line">168</div><div class="line">169</div></pre></td><td class="code"><pre><div class="line">public final class MultiProducerSequencer extends AbstractSequencer &#123;</div><div class="line">    private static final Unsafe UNSAFE = Util.getUnsafe();</div><div class="line">    private static final long BASE;//数组第一个元素的偏移量（内存位置）</div><div class="line">    private static final long SCALE;//数组每个元素大小</div><div class="line">    private final Sequence gatingSequenceCache = new Sequence(-1L);//最慢消费者seq缓存，不是每次都计算,只有覆盖点&gt;最慢消费者seq时，再次请求计算最新的最慢消费者seq</div><div class="line">    private final int[] availableBuffer;</div><div class="line">    private final int indexMask;//bufferSize-1,用于取模求圈数</div><div class="line">    private final int indexShift;//</div><div class="line"></div><div class="line">    public MultiProducerSequencer(int bufferSize, WaitStrategy waitStrategy) &#123;</div><div class="line">        super(bufferSize, waitStrategy);</div><div class="line">        this.availableBuffer = new int[bufferSize];</div><div class="line">        this.indexMask = bufferSize - 1;</div><div class="line">        this.indexShift = Util.log2(bufferSize);//8-&gt;3,为了后面&gt;&gt;&gt;运算，m&gt;&gt;&gt;n = m除以2的n次方</div><div class="line">        this.initialiseAvailableBuffer();</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public boolean hasAvailableCapacity(int requiredCapacity) &#123;</div><div class="line">        return this.hasAvailableCapacity(this.gatingSequences, requiredCapacity, this.cursor.get());</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    private boolean hasAvailableCapacity(Sequence[] gatingSequences, int requiredCapacity, long cursorValue) &#123;</div><div class="line">        //覆盖点</div><div class="line">        long wrapPoint = cursorValue + (long)requiredCapacity - (long)this.bufferSize;</div><div class="line">        //最慢消费者的消费到的seq</div><div class="line">        long cachedGatingSequence = this.gatingSequenceCache.get();</div><div class="line">        //覆盖点过了最慢消费者的seq，</div><div class="line">        或者cursorValue=Long.maxValue+1位负数，最慢消费者的seq大于cursorValue（不知是否理解有误）</div><div class="line">        if(wrapPoint &gt; cachedGatingSequence || cachedGatingSequence &gt; cursorValue) &#123;</div><div class="line">            //重新计算获得最慢消费者的seq</div><div class="line">            long minSequence = Util.getMinimumSequence(gatingSequences, cursorValue);</div><div class="line">            this.gatingSequenceCache.set(minSequence);</div><div class="line">            //如果仍然覆盖，则返回false</div><div class="line">            if(wrapPoint &gt; minSequence) &#123;</div><div class="line">                return false;</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        return true;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public void claim(long sequence) &#123;</div><div class="line">        this.cursor.set(sequence);</div><div class="line">    &#125;</div><div class="line">    //阻塞获取可生产填充的下一seq</div><div class="line">    public long next() &#123;</div><div class="line">        return this.next(1);</div><div class="line">    &#125;</div><div class="line">    //阻塞获取可生产填充的下seq</div><div class="line">    public long next(int n) &#123;</div><div class="line">        if(n &lt; 1) &#123;</div><div class="line">            throw new IllegalArgumentException(&quot;n must be &gt; 0&quot;);</div><div class="line">        &#125; else &#123;</div><div class="line">            long current;</div><div class="line">            long next;</div><div class="line">            do &#123;</div><div class="line">                while(true) &#123;</div><div class="line">                    current = this.cursor.get();</div><div class="line">                    next = current + (long)n;</div><div class="line">                    long wrapPoint = next - (long)this.bufferSize;</div><div class="line">                    long cachedGatingSequence = this.gatingSequenceCache.get();</div><div class="line">                    if(wrapPoint &lt;= cachedGatingSequence &amp;&amp; cachedGatingSequence &lt;= current) &#123;</div><div class="line">                        break;//不覆盖时，退出循环</div><div class="line">                    &#125;</div><div class="line">                    //重新计算</div><div class="line">                    long gatingSequence = Util.getMinimumSequence(this.gatingSequences, current);</div><div class="line">                    if(wrapPoint &gt; gatingSequence) &#123;//如果仍然覆盖，则唤醒消费者进行消费，生产者阻塞</div><div class="line">                        this.waitStrategy.signalAllWhenBlocking();</div><div class="line">                        LockSupport.parkNanos(1L);</div><div class="line">                    &#125; else &#123;否则更新最慢消费者的seq，进行下一循环，重新判断（可能是cursor已经变了）</div><div class="line">                        this.gatingSequenceCache.set(gatingSequence);</div><div class="line">                    &#125;</div><div class="line">                &#125;</div><div class="line">            &#125; while(!this.cursor.compareAndSet(current, next));//不覆盖时，尝试设置cursor为next失败</div><div class="line"></div><div class="line">            return next;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    //不阻塞，获取失败，抛异常</div><div class="line">    public long tryNext() throws InsufficientCapacityException &#123;</div><div class="line">        return this.tryNext(1);</div><div class="line">    &#125;</div><div class="line">    //不阻塞，获取失败，抛异常</div><div class="line">    public long tryNext(int n) throws InsufficientCapacityException &#123;</div><div class="line">        if(n &lt; 1) &#123;</div><div class="line">            throw new IllegalArgumentException(&quot;n must be &gt; 0&quot;);</div><div class="line">        &#125; else &#123;</div><div class="line">            long current;</div><div class="line">            long next;</div><div class="line">            do &#123;</div><div class="line">                current = this.cursor.get();</div><div class="line">                next = current + (long)n;</div><div class="line">                if(!this.hasAvailableCapacity(this.gatingSequences, n, current)) &#123;</div><div class="line">                    throw InsufficientCapacityException.INSTANCE;</div><div class="line">                &#125;</div><div class="line">            &#125; while(!this.cursor.compareAndSet(current, next));</div><div class="line"></div><div class="line">            return next;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public long remainingCapacity() &#123;</div><div class="line">        long consumed = Util.getMinimumSequence(this.gatingSequences, this.cursor.get());</div><div class="line">        long produced = this.cursor.get();</div><div class="line">        return (long)this.getBufferSize() - (produced - consumed);</div><div class="line">    &#125;</div><div class="line">    //初始化int[]值为-1，代表圈数</div><div class="line">    private void initialiseAvailableBuffer() &#123;</div><div class="line">        for(int i = this.availableBuffer.length - 1; i != 0; --i) &#123;</div><div class="line">            this.setAvailableBufferValue(i, -1);</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        this.setAvailableBufferValue(0, -1);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public void publish(long sequence) &#123;</div><div class="line">        this.setAvailable(sequence);//记录seq所在槽的圈数</div><div class="line">        this.waitStrategy.signalAllWhenBlocking();</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public void publish(long lo, long hi) &#123;</div><div class="line">        for(long l = lo; l &lt;= hi; ++l) &#123;</div><div class="line">            this.setAvailable(l);</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        this.waitStrategy.signalAllWhenBlocking();</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    private void setAvailable(long sequence) &#123;</div><div class="line">        this.setAvailableBufferValue(this.calculateIndex(sequence), this.calculateAvailabilityFlag(sequence));</div><div class="line">    &#125;</div><div class="line">    //按内存地址位置指定int[]元素的值，值为圈数</div><div class="line">    index：槽位，flag：圈数</div><div class="line">    private void setAvailableBufferValue(int index, int flag) &#123;</div><div class="line">        //计算槽位对应的内存地址</div><div class="line">        long bufferAddress = (long)index * SCALE + BASE; </div><div class="line">        //设置availableBuffer中偏移量（内存地址）为bufferAddress的值</div><div class="line">        UNSAFE.putOrderedInt(this.availableBuffer, bufferAddress, flag);</div><div class="line">    &#125;</div><div class="line">    //是否可用：seq计算出的圈数是否已被设置到availableBuffer</div><div class="line">    public boolean isAvailable(long sequence) &#123;</div><div class="line">        int index = this.calculateIndex(sequence);</div><div class="line">        int flag = this.calculateAvailabilityFlag(sequence);</div><div class="line">        long bufferAddress = (long)index * SCALE + BASE;</div><div class="line">        return UNSAFE.getIntVolatile(this.availableBuffer, bufferAddress) == flag;</div><div class="line">    &#125;</div><div class="line">    //lowerBound 到 availableSequence之间 最大可用seq</div><div class="line">    public long getHighestPublishedSequence(long lowerBound, long availableSequence) &#123;</div><div class="line">        for(long sequence = lowerBound; sequence &lt;= availableSequence; ++sequence) &#123;</div><div class="line">            if(!this.isAvailable(sequence)) &#123;</div><div class="line">                return sequence - 1L;</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        return availableSequence;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    private int calculateAvailabilityFlag(long sequence) &#123;</div><div class="line">        return (int)(sequence &gt;&gt;&gt; this.indexShift);//圈数</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    private int calculateIndex(long sequence) &#123;</div><div class="line">        return (int)sequence &amp; this.indexMask;//槽位</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    static &#123;</div><div class="line">        BASE = (long)UNSAFE.arrayBaseOffset(int[].class);//数组第一个元素的偏移量（内存位置）</div><div class="line">        SCALE = (long)UNSAFE.arrayIndexScale(int[].class);//数组一个元素的大小</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="SequenceBarrier"><a href="#SequenceBarrier" class="headerlink" title="SequenceBarrier"></a>SequenceBarrier</h2><p>一个消费者组对应一个barrier</p>
+<p>1、waitFor获得最大可用seq（前置消费者已消费，且已写入事件）</p>
+<ul>
+<li>实际调用等待策略的waitFor()，获得前置消费者消费到的位置，availableSequence = dependentSequence.get()，可能存在批量消费的情况，所以availableSequence 可能会大于请求的seq</li>
+<li>然后调用sequencer.getHighestPublishedSequence(sequence, availableSequence);获得最大已写入事件的seq</li>
+</ul>
+<p>2、alert唤醒阻塞的消费者,实际调用等待策略的signalAllWhenBlocking()</p>
+<h3 id="ProcessingSequenceBarrier"><a href="#ProcessingSequenceBarrier" class="headerlink" title="ProcessingSequenceBarrier"></a>ProcessingSequenceBarrier</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div></pre></td><td class="code"><pre><div class="line">final class ProcessingSequenceBarrier implements SequenceBarrier&#123;</div><div class="line">    //等待策略。  </div><div class="line">    private final WaitStrategy waitStrategy;  </div><div class="line">    前置消费者的Sequence，如果没有，则等于生产者的Sequence  </div><div class="line">    private final Sequence dependentSequence; </div><div class="line">    是否已通知</div><div class="line">    private volatile boolean alerted = false;  </div><div class="line">    生产者的Sequence</div><div class="line">    private final Sequence cursorSequence;  </div><div class="line">    生产者seq管理器，获得最大可用long，MultiProducerSequencer 或 SingleProducerSequencer</div><div class="line">    private final Sequencer sequencer;  </div><div class="line">    public ProcessingSequenceBarrier(final Sequencer sequencer,  </div><div class="line">                                     final WaitStrategy waitStrategy,  </div><div class="line">                                     final Sequence cursorSequence,  </div><div class="line">                                     final Sequence[] dependentSequences)&#123;  </div><div class="line">        this.sequencer = sequencer;  </div><div class="line">        this.waitStrategy = waitStrategy;  </div><div class="line">        this.cursorSequence = cursorSequence;  </div><div class="line">        if (0 == dependentSequences.length)&#123;  </div><div class="line">            dependentSequence = cursorSequence;  </div><div class="line">        &#125;else&#123;  </div><div class="line">            dependentSequence = new FixedSequenceGroup(dependentSequences);  </div><div class="line">        &#125;  </div><div class="line">    &#125;  </div><div class="line">    @Override  </div><div class="line">    public long waitFor(final long sequence)  </div><div class="line">        throws AlertException, InterruptedException, TimeoutException&#123;  </div><div class="line">        //先检测是否已通知生产者，通知过则发异常</div><div class="line">        checkAlert();  </div><div class="line">        //然后根据等待策略来等待可用的序列值，消费者批量消费到的seq，可能未发布事件</div><div class="line">        long availableSequence = waitStrategy.waitFor(sequence, cursorSequence, dependentSequence, this);  </div><div class="line">        if (availableSequence &lt; sequence)&#123;  </div><div class="line">            return availableSequence; //如果可用的序列值小于请求的序列，那么直接返回可用的序列。  </div><div class="line">        &#125;  </div><div class="line">        //否则，返回能使用（已发布事件）的最大的序列值，</div><div class="line">        return sequencer.getHighestPublishedSequence(sequence, availableSequence);  </div><div class="line">    &#125;  </div><div class="line">    @Override  </div><div class="line">    public long getCursor()&#123;  </div><div class="line">        return dependentSequence.get();  </div><div class="line">    &#125;  </div><div class="line">    @Override  </div><div class="line">    public boolean isAlerted()&#123;  </div><div class="line">        return alerted;  </div><div class="line">    &#125;  </div><div class="line">    @Override  </div><div class="line">    public void alert()&#123;  </div><div class="line">        alerted = true; //设置通知标记  </div><div class="line">        waitStrategy.signalAllWhenBlocking();//如果有线程以阻塞的方式等待序列，将其唤醒。  </div><div class="line">    &#125;  </div><div class="line">    @Override  </div><div class="line">    public void clearAlert()&#123;  </div><div class="line">        alerted = false;  </div><div class="line">    &#125;  </div><div class="line">    @Override  </div><div class="line">    public void checkAlert() throws AlertException&#123;  </div><div class="line">        if (alerted)&#123;  </div><div class="line">            throw AlertException.INSTANCE;  </div><div class="line">        &#125;  </div><div class="line">    &#125;  </div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="BlockingWaitStrategy"><a href="#BlockingWaitStrategy" class="headerlink" title="BlockingWaitStrategy"></a>BlockingWaitStrategy</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div></pre></td><td class="code"><pre><div class="line">public final class BlockingWaitStrategy implements WaitStrategy &#123;</div><div class="line">    private final Lock lock = new ReentrantLock();</div><div class="line">    private final Condition processorNotifyCondition;</div><div class="line"></div><div class="line">    public BlockingWaitStrategy() &#123;</div><div class="line">        this.processorNotifyCondition = this.lock.newCondition();</div><div class="line">    &#125;</div><div class="line">    //等待最大可用序列号</div><div class="line">    public long waitFor(long sequence, Sequence cursorSequence, Sequence dependentSequence, SequenceBarrier barrier) throws AlertException, InterruptedException &#123;</div><div class="line">        if(cursorSequence.get() &lt; sequence) &#123;请求的seq&gt;生产者seq：进入可重入锁并等待 </div><div class="line">            this.lock.lock();</div><div class="line"></div><div class="line">            try &#123;</div><div class="line">                while(cursorSequence.get() &lt; sequence) &#123;</div><div class="line">                    barrier.checkAlert();//循环检查是否请求的seq&gt;生产者seq，是的话检查是否已解除屏障，是则抛异常，终止循环，否则等待。</div><div class="line">                    this.processorNotifyCondition.await();</div><div class="line">                &#125;</div><div class="line">            &#125; finally &#123;</div><div class="line">                this.lock.unlock();</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        long availableSequence;</div><div class="line">        //当请求的seq&lt;=生产者seq，检查是否请求的seq&gt;前置消费者消费到的seq,是的话自旋（并循环检查是否有其他线程已唤醒消费者，是的话则抛异常,等同于是否已解除屏障，这块不知道理解对否）</div><div class="line">        while((availableSequence = dependentSequence.get()) &lt; sequence) &#123;</div><div class="line">            barrier.checkAlert();</div><div class="line">        &#125;</div><div class="line">        return availableSequence;</div><div class="line">    &#125;</div><div class="line">    //通知所有等待的消费者</div><div class="line">    public void signalAllWhenBlocking() &#123;</div><div class="line">        this.lock.lock();</div><div class="line"></div><div class="line">        try &#123;</div><div class="line">            this.processorNotifyCondition.signalAll();</div><div class="line">        &#125; finally &#123;</div><div class="line">            this.lock.unlock();</div><div class="line">        &#125;</div><div class="line"></div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public String toString() &#123;</div><div class="line">        return &quot;BlockingWaitStrategy&#123;processorNotifyCondition=&quot; + this.processorNotifyCondition + &apos;&#125;&apos;;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="RingBuffer"><a href="#RingBuffer" class="headerlink" title="RingBuffer"></a>RingBuffer</h2><ol>
+<li>RingBuffer对象做了缓存行填充，前后各填充了56个字节，</li>
+<li>entries[]本身也根据引用大小进行了填充，数组前后各增加了128字节的数组对象，每个对象引用大小=4或8（大小与32位与64位系统及指针压缩有关），则前后各填充32或16个空数组位</li>
+<li>所以实际的数组长度比bufferSize要大。所以根据序列从entries中取元素的方法elementAt内部做了一些调整，而不是单纯取模，seq内存地址为=槽位（seq&amp;（buffersize-1））*对象大小+起始偏移量</li>
+<li>RingBuffer对象的创建是静态方法，需指定Sequencer类型，传递EventFactory</li>
+<li>序列管理相关的方法实际是通过调用sequencer的相关方法实现的，如next(),addGatingSequences()</li>
+<li>可发布EventTranslator：publishEvent(EventTranslator)，也可先获得next seq，再获得预初始化的Event对象，修改Event对象，再发布seq。</li>
+<li>SingleProducer模式下，使用多线程发布，会有数据被覆盖的情况，所以需根据情况选择合理的模式</li>
+<li>重要属性及方法说明：</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line">public final class RingBuffer&lt;E&gt; extends RingBufferFields&lt;E&gt; implements Cursored, EventSequencer&lt;E&gt;, EventSink&lt;E&gt; &#123;</div><div class="line"></div><div class="line">  private final long indexMask = (long)(this.bufferSize - 1);//用于计算seq槽位=seq&amp;indexMask</div><div class="line"></div><div class="line">  private final Object[] entries;//事件</div><div class="line"></div><div class="line">  protected final int bufferSize;//大小</div><div class="line"></div><div class="line">  protected final Sequencer sequencer; //序列管理</div><div class="line"></div><div class="line">  RingBuffer(EventFactory&lt;E&gt; eventFactory, Sequencer sequencer)//私有构造方法</div><div class="line"></div><div class="line">  public static &lt;E&gt; RingBuffer&lt;E&gt; createMultiProducer(EventFactory&lt;E&gt; factory, int bufferSize, WaitStrategy waitStrategy)//创建多生产者的ringbuffer</div><div class="line"></div><div class="line">  public static &lt;E&gt; RingBuffer&lt;E&gt; createSingleProducer(EventFactory&lt;E&gt; factory, int bufferSize, WaitStrategy waitStrategy)//创建单一生产者的ringbuffer</div><div class="line"></div><div class="line">  public static &lt;E&gt; RingBuffer&lt;E&gt; create(ProducerType producerType, EventFactory&lt;E&gt; factory, int bufferSize, WaitStrategy waitStrategy) //根据producerType创建ringbuffer</div><div class="line"></div><div class="line">  //添加gatingSequences</div><div class="line">  public void addGatingSequences(Sequence... gatingSequences) &#123;</div><div class="line">		this.sequencer.addGatingSequences(gatingSequences);</div><div class="line">  &#125;</div></pre></td></tr></table></figure>
+<ul>
+<li>RingBufferFields<e> 填充</e></li>
+<li>Cursored, 获得当前指针序号</li>
+<li><p>EventSequencer<e>, 序号管理</e></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">1、DataProvider&lt;T&gt;提供获取Event对象的方法: T get(long var1);</div><div class="line">2、Sequenced序号管理: next(long var1),tryNext(long var1)</div><div class="line">public interface EventSequencer&lt;T&gt; extends DataProvider&lt;T&gt;, Sequenced</div></pre></td></tr></table></figure>
+</li>
+<li><p>EventSink<e> 事件发布</e></p>
+</li>
+</ul>
+<h2 id="EventProcessor"><a href="#EventProcessor" class="headerlink" title="EventProcessor"></a>EventProcessor</h2><ul>
+<li>一个线程EventProcessor 一个线程，对应一个EventHandler，</li>
+<li>包含一个Sequence，记录当前消费到的seq，这个seq会被加入到Sequencer作为gatingSequence</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">public interface EventProcessor extends Runnable&#123;  </div><div class="line">    /** </div><div class="line">     * 获取一个事件处理器使用的序列引用。 </div><div class="line">     */  </div><div class="line">    Sequence getSequence();  </div><div class="line">    void halt();  </div><div class="line">    boolean isRunning();  </div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="BatchEventProcessor"><a href="#BatchEventProcessor" class="headerlink" title="BatchEventProcessor"></a>BatchEventProcessor</h3><ul>
+<li>每个BatchEventProcessor都会处理一遍RingBuffer中的事件</li>
+<li>默认异常了，调用默认的exceptionHandler仍继续处理，默认exceptionHandler直接抛了异常出去，消费者会阻塞，可能会影响业务，需自定义异常。</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div><div class="line">104</div><div class="line">105</div><div class="line">106</div><div class="line">107</div><div class="line">108</div><div class="line">109</div><div class="line">110</div><div class="line">111</div><div class="line">112</div><div class="line">113</div><div class="line">114</div><div class="line">115</div><div class="line">116</div><div class="line">117</div><div class="line">118</div><div class="line">119</div></pre></td><td class="code"><pre><div class="line">public final class BatchEventProcessor&lt;T&gt; implements EventProcessor &#123;</div><div class="line">    private final AtomicBoolean running = new AtomicBoolean(false);//运行状态</div><div class="line">    private ExceptionHandler&lt;? super T&gt; exceptionHandler = new FatalExceptionHandler();</div><div class="line">    private final DataProvider&lt;T&gt; dataProvider;</div><div class="line">    private final SequenceBarrier sequenceBarrier;</div><div class="line">    private final EventHandler&lt;? super T&gt; eventHandler;</div><div class="line">    private final Sequence sequence = new Sequence(-1L);//当前处理到的seq</div><div class="line">    private final TimeoutHandler timeoutHandler;</div><div class="line">    private final BatchStartAware batchStartAware;</div><div class="line">    </div><div class="line">    public BatchEventProcessor(DataProvider&lt;T&gt; dataProvider, SequenceBarrier sequenceBarrier, EventHandler&lt;? super T&gt; eventHandler) &#123;</div><div class="line">        this.dataProvider = dataProvider;</div><div class="line">        this.sequenceBarrier = sequenceBarrier;</div><div class="line">        this.eventHandler = eventHandler;</div><div class="line">        if(eventHandler instanceof SequenceReportingEventHandler) &#123;</div><div class="line">            ((SequenceReportingEventHandler)eventHandler).setSequenceCallback(this.sequence);</div><div class="line">        &#125;</div><div class="line">    </div><div class="line">        this.batchStartAware = eventHandler instanceof BatchStartAware?(BatchStartAware)eventHandler:null;</div><div class="line">        this.timeoutHandler = eventHandler instanceof TimeoutHandler?(TimeoutHandler)eventHandler:null;</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    public Sequence getSequence() &#123;</div><div class="line">        return this.sequence;</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    public void halt() &#123;</div><div class="line">        this.running.set(false);</div><div class="line">        this.sequenceBarrier.alert();</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    public boolean isRunning() &#123;</div><div class="line">        return this.running.get();</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    public void setExceptionHandler(ExceptionHandler&lt;? super T&gt; exceptionHandler) &#123;</div><div class="line">        if(null == exceptionHandler) &#123;</div><div class="line">            throw new NullPointerException();</div><div class="line">        &#125; else &#123;</div><div class="line">            this.exceptionHandler = exceptionHandler;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    public void run() &#123;</div><div class="line">        if(!this.running.compareAndSet(false, true)) &#123;//原子设置运行状态为true，如果已经为true则正在运行，否则启动运行。</div><div class="line">            throw new IllegalStateException(&quot;Thread is already running&quot;);</div><div class="line">        &#125; else &#123;</div><div class="line">            this.sequenceBarrier.clearAlert();//清除消费者屏障</div><div class="line">            this.notifyStart();//如果eventHandler继承LifecycleAware，通知调用onStart方法</div><div class="line">            Object event = null;</div><div class="line">            long nextSequence = this.sequence.get() + 1L;//当前处理到的seq+1</div><div class="line">    </div><div class="line">            try &#123;</div><div class="line">                while(true) &#123;</div><div class="line">                    try &#123;</div><div class="line">                        long ex = this.sequenceBarrier.waitFor(nextSequence);//使用屏障获得最大可用seq</div><div class="line">                        if(this.batchStartAware != null) &#123;//批量启动通知</div><div class="line">                            this.batchStartAware.onBatchStart(ex - nextSequence + 1L);</div><div class="line">                        &#125;</div><div class="line">    </div><div class="line">                        while(nextSequence &lt;= ex) &#123;如果请求的seq小于最大可用seq，则遍历处理这些可用seq</div><div class="line">                            event = this.dataProvider.get(nextSequence);</div><div class="line">                            this.eventHandler.onEvent(event, nextSequence, nextSequence == ex);</div><div class="line">                            ++nextSequence;</div><div class="line">                        &#125;</div><div class="line">    </div><div class="line">                        this.sequence.set(ex);//设置处理到的seq为最大可用seq</div><div class="line">                    &#125; catch (TimeoutException var11) &#123;</div><div class="line">                        this.notifyTimeout(this.sequence.get());</div><div class="line">                    &#125; catch (AlertException var12) &#123;</div><div class="line">                        if(!this.running.get()) &#123;//执行halt()后，running=false</div><div class="line">                            return;//终止线程</div><div class="line">                        &#125;</div><div class="line">                    &#125; catch (Throwable var13) &#123;//异常仍然继续处理</div><div class="line">                        this.exceptionHandler.handleEventException(var13, nextSequence, event);</div><div class="line">                        this.sequence.set(nextSequence);</div><div class="line">                        ++nextSequence;</div><div class="line">                    &#125;</div><div class="line">                &#125;</div><div class="line">            &#125; finally &#123;</div><div class="line">                this.notifyShutdown();//eventhandler如果实现了LifecycleAware，通知调用onShutdown方法</div><div class="line">                this.running.set(false);</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    private void notifyTimeout(long availableSequence) &#123;</div><div class="line">        try &#123;</div><div class="line">            if(this.timeoutHandler != null) &#123;</div><div class="line">                this.timeoutHandler.onTimeout(availableSequence);</div><div class="line">            &#125;</div><div class="line">        &#125; catch (Throwable var4) &#123;</div><div class="line">            this.exceptionHandler.handleEventException(var4, availableSequence, (Object)null);</div><div class="line">        &#125;</div><div class="line">    </div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    private void notifyStart() &#123;</div><div class="line">        if(this.eventHandler instanceof LifecycleAware) &#123;</div><div class="line">            try &#123;</div><div class="line">                ((LifecycleAware)this.eventHandler).onStart();</div><div class="line">            &#125; catch (Throwable var2) &#123;</div><div class="line">                this.exceptionHandler.handleOnStartException(var2);</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    </div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    private void notifyShutdown() &#123;</div><div class="line">        if(this.eventHandler instanceof LifecycleAware) &#123;</div><div class="line">            try &#123;</div><div class="line">                ((LifecycleAware)this.eventHandler).onShutdown();</div><div class="line">            &#125; catch (Throwable var2) &#123;</div><div class="line">                this.exceptionHandler.handleOnShutdownException(var2);</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    </div><div class="line">    &#125;</div><div class="line">    &#125;</div></pre></td></tr></table></figure>
+<h4 id="EventHandler"><a href="#EventHandler" class="headerlink" title="EventHandler"></a>EventHandler</h4><p>具体事件处理逻辑</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">public interface EventHandler&lt;T&gt;&#123;</div><div class="line">	void onEvent(T event, long sequence, boolean endOfBatch) throws Exception; </div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="WorkProcessor"><a href="#WorkProcessor" class="headerlink" title="WorkProcessor"></a>WorkProcessor</h3><p>多个同类的workProcessor线程，竞争消费RingBuffer（通过workSequence.CAS），一个线程消费过的，其他线程不再消费</p>
+<ul>
+<li><p>传递workHandler，workSequence（多线程共享上一次被处理的事件的seq，各线程尝试cas设置为workSequence+1，如果成功则表示改线程获得可处理的seq）</p>
+</li>
+<li><p>持有eventReleaser </p>
+</li>
+<li><p>halt()方法终止线程，</p>
+<ol>
+<li>halt()方法会调用barrier.alert()-设置alert=true</li>
+<li>run方法中barrier.waitFor()会调用checkAlert(),如果alert=ture会抛AlertException异常</li>
+<li>run()捕获AlertException异常，终止线程</li>
+</ol>
+</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div><div class="line">104</div><div class="line">105</div><div class="line">106</div><div class="line">107</div><div class="line">108</div><div class="line">109</div><div class="line">110</div><div class="line">111</div><div class="line">112</div><div class="line">113</div><div class="line">114</div><div class="line">115</div><div class="line">116</div><div class="line">117</div><div class="line">118</div><div class="line">119</div><div class="line">120</div><div class="line">121</div><div class="line">122</div><div class="line">123</div></pre></td><td class="code"><pre><div class="line">public final class WorkProcessor&lt;T&gt; implements EventProcessor &#123;</div><div class="line"></div><div class="line">    private final AtomicBoolean running = new AtomicBoolean(false);</div><div class="line">    private final Sequence sequence = new Sequence(-1L);当前处理到的seq</div><div class="line">    private final RingBuffer&lt;T&gt; ringBuffer;</div><div class="line">    private final SequenceBarrier sequenceBarrier;</div><div class="line">    private final WorkHandler&lt;? super T&gt; workHandler;</div><div class="line">    private final ExceptionHandler&lt;? super T&gt; exceptionHandler;</div><div class="line">    private final Sequence workSequence;//多线程共享，上一次处理的事件的seq</div><div class="line">    private final EventReleaser eventReleaser = new EventReleaser() &#123;</div><div class="line">    public void release() &#123;</div><div class="line">        WorkProcessor.this.sequence.set(9223372036854775807L);</div><div class="line">    &#125;</div><div class="line">	&#125;;</div><div class="line"></div><div class="line">	private final TimeoutHandler timeoutHandler;</div><div class="line">	</div><div class="line">	public WorkProcessor(RingBuffer&lt;T&gt; ringBuffer, SequenceBarrier sequenceBarrier, WorkHandler&lt;? super T&gt; workHandler, ExceptionHandler&lt;? super T&gt; exceptionHandler, Sequence workSequence) &#123;</div><div class="line">	</div><div class="line">	    this.ringBuffer = ringBuffer;</div><div class="line">	    this.sequenceBarrier = sequenceBarrier;</div><div class="line">	    this.workHandler = workHandler;</div><div class="line">	    this.exceptionHandler = exceptionHandler;</div><div class="line">	    this.workSequence = workSequence;</div><div class="line">	    if(this.workHandler instanceof EventReleaseAware) &#123;</div><div class="line">	        ((EventReleaseAware)this.workHandler).setEventReleaser(this.eventReleaser);</div><div class="line">	    &#125;</div><div class="line">	    </div><div class="line">	    this.timeoutHandler = workHandler instanceof TimeoutHandler?(TimeoutHandler)workHandler:null;</div><div class="line">	</div><div class="line">	&#125;</div><div class="line">	</div><div class="line">	public Sequence getSequence() &#123;</div><div class="line">	    return this.sequence;	</div><div class="line">	&#125;</div><div class="line">	</div><div class="line">	public void halt() &#123;	</div><div class="line">	    this.running.set(false);</div><div class="line">	    this.sequenceBarrier.alert();//通知阻塞等待的消费者，sequenceBarrier.waitFor中checkAlert会抛异常，中断线程</div><div class="line">	&#125;</div><div class="line">	</div><div class="line">	public boolean isRunning() &#123;</div><div class="line">	    return this.running.get();</div><div class="line">	&#125;</div><div class="line">	</div><div class="line">	public void run() &#123;</div><div class="line">	    if(!this.running.compareAndSet(false, true)) &#123;</div><div class="line">	        throw new IllegalStateException(&quot;Thread is already running&quot;);</div><div class="line">	    &#125; else &#123;</div><div class="line">	        this.sequenceBarrier.clearAlert();</div><div class="line">	        this.notifyStart();</div><div class="line">	        boolean processedSequence = true;</div><div class="line">	        long cachedAvailableSequence = -9223372036854775808L;</div><div class="line">	        long nextSequence = this.sequence.get();</div><div class="line">	        Object event = null;</div><div class="line">	    </div><div class="line">	        while(true) &#123;</div><div class="line">	            while(true) &#123;</div><div class="line">	                try &#123;</div><div class="line">	                    if(processedSequence) &#123;//上一事件是否处理完成，是的话，进入新事件处理流程</div><div class="line">	                        processedSequence = false;</div><div class="line">	    </div><div class="line">	                        do &#123;</div><div class="line">	                            nextSequence = this.workSequence.get() + 1L;//获得下一要处理的seq</div><div class="line">	                            this.sequence.set(nextSequence - 1L);//更新当前已处理到的seq为请求的seq-1</div><div class="line">	                        &#125; while(!this.workSequence.compareAndSet(nextSequence - 1L, nextSequence));//尝试cas下一workSequence = workSequence+1直到成功</div><div class="line">	                    &#125;</div><div class="line"></div><div class="line">	                    if(cachedAvailableSequence &gt;= nextSequence) &#123;请求的seq是否小于缓存的最大可用seq，是的话获得请求的事件，进行处理，处理完成后，processedSequence标记为true</div><div class="line">	                        event = this.ringBuffer.get(nextSequence);</div><div class="line">	                        this.workHandler.onEvent(event);</div><div class="line">	                        processedSequence = true;</div><div class="line">	                    &#125; else &#123;//否则，阻塞等待当前可用的最大seq，并更新cache，继续下一循环</div><div class="line">	                        cachedAvailableSequence = this.sequenceBarrier.waitFor(nextSequence);</div><div class="line">	                    &#125;</div><div class="line">	                &#125; catch (TimeoutException var8) &#123;</div><div class="line">	                    this.notifyTimeout(this.sequence.get());</div><div class="line">	                &#125; catch (AlertException var9) &#123;</div><div class="line">	                    if(!this.running.get()) &#123;</div><div class="line">	                        this.notifyShutdown();</div><div class="line">	                        this.running.set(false);</div><div class="line">	                        return;//终止线程</div><div class="line">	                    &#125;</div><div class="line">	                &#125; catch (Throwable var10) &#123;</div><div class="line">	                    this.exceptionHandler.handleEventException(var10, nextSequence, event);</div><div class="line">	                    processedSequence = true;</div><div class="line">	                &#125;</div><div class="line">	            &#125;</div><div class="line">	        &#125;</div><div class="line">	    &#125;</div><div class="line">	</div><div class="line">	&#125;</div><div class="line">	</div><div class="line">	private void notifyTimeout(long availableSequence) &#123;</div><div class="line">	    try &#123;</div><div class="line">	        if(this.timeoutHandler != null) &#123;</div><div class="line">	            this.timeoutHandler.onTimeout(availableSequence);</div><div class="line">	        &#125;</div><div class="line">	    &#125; catch (Throwable var4) &#123;</div><div class="line">	        this.exceptionHandler.handleEventException(var4, availableSequence, (Object)null);</div><div class="line">	    &#125;</div><div class="line">	&#125;</div><div class="line">	</div><div class="line">	private void notifyStart() &#123;</div><div class="line">	    if(this.workHandler instanceof LifecycleAware) &#123;</div><div class="line">	        try &#123;</div><div class="line">	            ((LifecycleAware)this.workHandler).onStart();</div><div class="line">	        &#125; catch (Throwable var2) &#123;</div><div class="line">	            this.exceptionHandler.handleOnStartException(var2);</div><div class="line">	        &#125;</div><div class="line">	    &#125;</div><div class="line">	&#125;</div><div class="line">	</div><div class="line">	private void notifyShutdown() &#123;</div><div class="line">	    if(this.workHandler instanceof LifecycleAware) &#123;</div><div class="line">	        try &#123;</div><div class="line">	            ((LifecycleAware)this.workHandler).onShutdown();</div><div class="line">	        &#125; catch (Throwable var2) &#123;</div><div class="line">	            this.exceptionHandler.handleOnShutdownException(var2);</div><div class="line">	        &#125;</div><div class="line">	    &#125;</div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h4 id="WorkerPool"><a href="#WorkerPool" class="headerlink" title="WorkerPool"></a>WorkerPool</h4><p>多个WorkProcessor&lt;?&gt;[]线程</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div></pre></td><td class="code"><pre><div class="line">public final class WorkerPool&lt;T&gt; &#123;</div><div class="line">    private final AtomicBoolean started = new AtomicBoolean(false);//运行状态</div><div class="line">    private final Sequence workSequence = new Sequence(-1L);//多个Processor共用一个处理的seq</div><div class="line">    private final RingBuffer&lt;T&gt; ringBuffer;</div><div class="line">    private final WorkProcessor&lt;?&gt;[] workProcessors;//处理线程组</div><div class="line"></div><div class="line">    public WorkerPool(RingBuffer&lt;T&gt; ringBuffer, SequenceBarrier sequenceBarrier, ExceptionHandler&lt;? super T&gt; exceptionHandler, WorkHandler... workHandlers) &#123;</div><div class="line">        this.ringBuffer = ringBuffer;</div><div class="line">        int numWorkers = workHandlers.length;</div><div class="line">        this.workProcessors = new WorkProcessor[numWorkers];//一个handler一个线程</div><div class="line">        for(int i = 0; i &lt; numWorkers; ++i) &#123;</div><div class="line">            this.workProcessors[i] = new WorkProcessor(ringBuffer, sequenceBarrier, workHandlers[i], exceptionHandler, this.workSequence);</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public WorkerPool(EventFactory&lt;T&gt; eventFactory, ExceptionHandler&lt;? super T&gt; exceptionHandler, WorkHandler... workHandlers) &#123;</div><div class="line">        this.ringBuffer = RingBuffer.createMultiProducer(eventFactory, 1024, new BlockingWaitStrategy());</div><div class="line">        SequenceBarrier barrier = this.ringBuffer.newBarrier(new Sequence[0]);</div><div class="line">        int numWorkers = workHandlers.length;</div><div class="line">        this.workProcessors = new WorkProcessor[numWorkers];</div><div class="line">        for(int i = 0; i &lt; numWorkers; ++i) &#123;</div><div class="line">            this.workProcessors[i] = new WorkProcessor(this.ringBuffer, barrier, workHandlers[i], exceptionHandler, this.workSequence);</div><div class="line">        &#125;</div><div class="line">        this.ringBuffer.addGatingSequences(this.getWorkerSequences());//添加消费者seq</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    public Sequence[] getWorkerSequences() &#123;//每个Processor消费到的Sequence加上workSequence，共同作为消费者seq</div><div class="line">        Sequence[] sequences = new Sequence[this.workProcessors.length + 1];</div><div class="line">        int i = 0;</div><div class="line">        for(int size = this.workProcessors.length; i &lt; size; ++i) &#123;</div><div class="line">            sequences[i] = this.workProcessors[i].getSequence();</div><div class="line">        &#125;</div><div class="line">        sequences[sequences.length - 1] = this.workSequence;</div><div class="line">        return sequences;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public RingBuffer&lt;T&gt; start(Executor executor) &#123;</div><div class="line">        if(!this.started.compareAndSet(false, true)) &#123;//检查是否已启动</div><div class="line">            throw new IllegalStateException(&quot;WorkerPool has already been started and cannot be restarted until halted.&quot;);</div><div class="line">        &#125; else &#123;</div><div class="line">            long cursor = this.ringBuffer.getCursor();//生产者当前生产到的seq</div><div class="line">            this.workSequence.set(cursor);//从生产者当前生产到的seq开始消费，作为workSeq</div><div class="line">            WorkProcessor[] var4 = this.workProcessors;</div><div class="line">            int var5 = var4.length;</div><div class="line">            for(int var6 = 0; var6 &lt; var5; ++var6) &#123;</div><div class="line">                WorkProcessor processor = var4[var6];</div><div class="line">                processor.getSequence().set(cursor);//遍历processor，设置workSeq</div><div class="line">                executor.execute(processor);//放入线程池</div><div class="line">            &#125;</div><div class="line">            return this.ringBuffer;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public void drainAndHalt() &#123;//等待消费者处理完，然后暂停</div><div class="line">        Sequence[] workerSequences = this.getWorkerSequences();//获得消费者消费到的seq</div><div class="line"></div><div class="line">        while(this.ringBuffer.getCursor() &gt; Util.getMinimumSequence(workerSequences)) &#123;</div><div class="line">            Thread.yield();//如果生产者覆盖了消费者未消费的seq，则等待</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        WorkProcessor[] var2 = this.workProcessors;</div><div class="line">        int var3 = var2.length;</div><div class="line">        for(int var4 = 0; var4 &lt; var3; ++var4) &#123;</div><div class="line">            WorkProcessor processor = var2[var4];</div><div class="line">            processor.halt();//消费者中断阻塞</div><div class="line">        &#125;</div><div class="line">        this.started.set(false);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public void halt() &#123;</div><div class="line">        WorkProcessor[] var1 = this.workProcessors;</div><div class="line">        int var2 = var1.length;</div><div class="line">        for(int var3 = 0; var3 &lt; var2; ++var3) &#123;</div><div class="line">            WorkProcessor processor = var1[var3];</div><div class="line">            processor.halt();//消费者中断阻塞</div><div class="line">        &#125;</div><div class="line">        this.started.set(false);//停止线程池</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    public boolean isRunning() &#123;</div><div class="line">        return this.started.get();</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h4 id="WorkHandler"><a href="#WorkHandler" class="headerlink" title="WorkHandler"></a>WorkHandler</h4><p>具体事件处理</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">public interface WorkHandler&lt;T&gt; &#123;</div><div class="line">	void onEvent(T var1) throws Exception;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h1 id="DSL"><a href="#DSL" class="headerlink" title="DSL"></a>DSL</h1><h2 id="Disruptor"><a href="#Disruptor" class="headerlink" title="Disruptor"></a>Disruptor</h2><ul>
+<li><p>Disruptor.handleEventsWith会调用updateGatingSequencesForNextInChain：更新Sequencer监听的消费者链上最后一个消费者组的seqs，同时删除前置消费者的seq，不再监听，修改前置消费者seq不为链上最后消费者seq</p>
+</li>
+<li><p>EventHandlerGroup.then()方法时间调用的也是Disruptor.handleEventsWith</p>
+</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div><div class="line">104</div><div class="line">105</div><div class="line">106</div><div class="line">107</div><div class="line">108</div><div class="line">109</div><div class="line">110</div><div class="line">111</div><div class="line">112</div><div class="line">113</div><div class="line">114</div><div class="line">115</div><div class="line">116</div><div class="line">117</div><div class="line">118</div><div class="line">119</div><div class="line">120</div><div class="line">121</div><div class="line">122</div><div class="line">123</div><div class="line">124</div><div class="line">125</div><div class="line">126</div><div class="line">127</div><div class="line">128</div><div class="line">129</div><div class="line">130</div><div class="line">131</div><div class="line">132</div><div class="line">133</div><div class="line">134</div><div class="line">135</div><div class="line">136</div><div class="line">137</div><div class="line">138</div><div class="line">139</div><div class="line">140</div><div class="line">141</div><div class="line">142</div><div class="line">143</div><div class="line">144</div><div class="line">145</div><div class="line">146</div><div class="line">147</div><div class="line">148</div><div class="line">149</div><div class="line">150</div><div class="line">151</div><div class="line">152</div><div class="line">153</div><div class="line">154</div><div class="line">155</div><div class="line">156</div><div class="line">157</div><div class="line">158</div><div class="line">159</div><div class="line">160</div><div class="line">161</div><div class="line">162</div><div class="line">163</div><div class="line">164</div><div class="line">165</div><div class="line">166</div><div class="line">167</div><div class="line">168</div><div class="line">169</div><div class="line">170</div><div class="line">171</div><div class="line">172</div><div class="line">173</div><div class="line">174</div><div class="line">175</div><div class="line">176</div><div class="line">177</div><div class="line">178</div><div class="line">179</div><div class="line">180</div><div class="line">181</div><div class="line">182</div><div class="line">183</div><div class="line">184</div><div class="line">185</div><div class="line">186</div><div class="line">187</div><div class="line">188</div><div class="line">189</div><div class="line">190</div><div class="line">191</div><div class="line">192</div><div class="line">193</div><div class="line">194</div><div class="line">195</div><div class="line">196</div><div class="line">197</div><div class="line">198</div><div class="line">199</div><div class="line">200</div><div class="line">201</div><div class="line">202</div><div class="line">203</div><div class="line">204</div><div class="line">205</div><div class="line">206</div><div class="line">207</div><div class="line">208</div><div class="line">209</div><div class="line">210</div><div class="line">211</div><div class="line">212</div><div class="line">213</div><div class="line">214</div><div class="line">215</div><div class="line">216</div><div class="line">217</div><div class="line">218</div><div class="line">219</div><div class="line">220</div><div class="line">221</div><div class="line">222</div><div class="line">223</div><div class="line">224</div><div class="line">225</div><div class="line">226</div><div class="line">227</div><div class="line">228</div><div class="line">229</div><div class="line">230</div><div class="line">231</div><div class="line">232</div><div class="line">233</div><div class="line">234</div><div class="line">235</div><div class="line">236</div><div class="line">237</div><div class="line">238</div><div class="line">239</div><div class="line">240</div><div class="line">241</div><div class="line">242</div><div class="line">243</div><div class="line">244</div><div class="line">245</div><div class="line">246</div><div class="line">247</div><div class="line">248</div><div class="line">249</div><div class="line">250</div><div class="line">251</div><div class="line">252</div><div class="line">253</div><div class="line">254</div><div class="line">255</div><div class="line">256</div><div class="line">257</div><div class="line">258</div><div class="line">259</div><div class="line">260</div><div class="line">261</div><div class="line">262</div><div class="line">263</div><div class="line">264</div><div class="line">265</div><div class="line">266</div><div class="line">267</div><div class="line">268</div><div class="line">269</div><div class="line">270</div><div class="line">271</div><div class="line">272</div></pre></td><td class="code"><pre><div class="line">public class Disruptor&lt;T&gt; &#123;</div><div class="line">    private final RingBuffer&lt;T&gt; ringBuffer;</div><div class="line">    private final Executor executor;//线程池</div><div class="line">    private final ConsumerRepository&lt;T&gt; consumerRepository;//消费者仓库</div><div class="line">    private final AtomicBoolean started;//是否启动</div><div class="line">    private ExceptionHandler&lt;? super T&gt; exceptionHandler;</div><div class="line"></div><div class="line">    /** @deprecated */</div><div class="line">    @Deprecated</div><div class="line">    public Disruptor(EventFactory&lt;T&gt; eventFactory, int ringBufferSize, Executor executor) &#123;</div><div class="line">        this(RingBuffer.createMultiProducer(eventFactory, ringBufferSize), executor);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    /** @deprecated */</div><div class="line">    @Deprecated</div><div class="line">    public Disruptor(EventFactory&lt;T&gt; eventFactory, int ringBufferSize, Executor executor, ProducerType producerType, WaitStrategy waitStrategy) &#123;</div><div class="line">        this(RingBuffer.create(producerType, eventFactory, ringBufferSize, waitStrategy), executor);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public Disruptor(EventFactory&lt;T&gt; eventFactory, int ringBufferSize, ThreadFactory threadFactory) &#123;</div><div class="line">        this(RingBuffer.createMultiProducer(eventFactory, ringBufferSize), new BasicExecutor(threadFactory));</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public Disruptor(EventFactory&lt;T&gt; eventFactory, int ringBufferSize, ThreadFactory threadFactory, ProducerType producerType, WaitStrategy waitStrategy) &#123;</div><div class="line">        this(RingBuffer.create(producerType, eventFactory, ringBufferSize, waitStrategy), new BasicExecutor(threadFactory));</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    private Disruptor(RingBuffer&lt;T&gt; ringBuffer, Executor executor) &#123;</div><div class="line">        this.consumerRepository = new ConsumerRepository();</div><div class="line">        this.started = new AtomicBoolean(false);</div><div class="line">        this.exceptionHandler = new ExceptionHandlerWrapper();</div><div class="line">        this.ringBuffer = ringBuffer;</div><div class="line">        this.executor = executor;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    //添加消费者，前置消费者默认为空=生产者cursor</div><div class="line"></div><div class="line">    public EventHandlerGroup&lt;T&gt; handleEventsWith(EventHandler... handlers) &#123;</div><div class="line">        return this.createEventProcessors(new Sequence[0], handlers);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    //添加消费者，前置消费者默认为空=生产者cursor</div><div class="line">    public EventHandlerGroup&lt;T&gt; handleEventsWith(EventProcessorFactory... eventProcessorFactories) &#123;</div><div class="line">        Sequence[] barrierSequences = new Sequence[0];</div><div class="line">        return this.createEventProcessors(barrierSequences, eventProcessorFactories);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    //添加消费者，前置消费者默认为空=生产者cursor</div><div class="line">    public EventHandlerGroup&lt;T&gt; handleEventsWith(EventProcessor... processors) &#123;</div><div class="line">        EventProcessor[] sequences = processors;</div><div class="line">        int i = processors.length;    </div><div class="line">        for(int var4 = 0; var4 &lt; i; ++var4) &#123;</div><div class="line">            EventProcessor processor = sequences[var4];</div><div class="line">            this.consumerRepository.add(processor);</div><div class="line">        &#125;    </div><div class="line">        Sequence[] var6 = new Sequence[processors.length];    </div><div class="line">        for(i = 0; i &lt; processors.length; ++i) &#123;</div><div class="line">            var6[i] = processors[i].getSequence();</div><div class="line">        &#125;    </div><div class="line">        this.ringBuffer.addGatingSequences(var6);</div><div class="line">        return new EventHandlerGroup(this, this.consumerRepository, Util.getSequencesFor(processors));</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    //创建多线程消费者</div><div class="line">    public EventHandlerGroup&lt;T&gt; handleEventsWithWorkerPool(WorkHandler... workHandlers) &#123;</div><div class="line">        return this.createWorkerPool(new Sequence[0], workHandlers);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    /** @deprecated */</div><div class="line">    public void handleExceptionsWith(ExceptionHandler&lt;? super T&gt; exceptionHandler) &#123;</div><div class="line">        this.exceptionHandler = exceptionHandler;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public void setDefaultExceptionHandler(ExceptionHandler&lt;? super T&gt; exceptionHandler) &#123;</div><div class="line">        this.checkNotStarted();</div><div class="line">        if(!(this.exceptionHandler instanceof ExceptionHandlerWrapper)) &#123;</div><div class="line">            throw new IllegalStateException(&quot;setDefaultExceptionHandler can not be used after handleExceptionsWith&quot;);</div><div class="line">        &#125; else &#123;</div><div class="line">            ((ExceptionHandlerWrapper)this.exceptionHandler).switchTo(exceptionHandler);</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public ExceptionHandlerSetting&lt;T&gt; handleExceptionsFor(EventHandler&lt;T&gt; eventHandler) &#123;</div><div class="line">        return new ExceptionHandlerSetting(eventHandler, this.consumerRepository);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public EventHandlerGroup&lt;T&gt; after(EventHandler... handlers) &#123;</div><div class="line">        Sequence[] sequences = new Sequence[handlers.length];</div><div class="line">        int i = 0;   </div><div class="line">        for(int handlersLength = handlers.length; i &lt; handlersLength; ++i) &#123;</div><div class="line">            sequences[i] = this.consumerRepository.getSequenceFor(handlers[i]);</div><div class="line">        &#125;</div><div class="line">        return new EventHandlerGroup(this, this.consumerRepository, sequences);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public EventHandlerGroup&lt;T&gt; after(EventProcessor... processors) &#123;</div><div class="line">        EventProcessor[] var2 = processors;</div><div class="line">        int var3 = processors.length;    </div><div class="line">        for(int var4 = 0; var4 &lt; var3; ++var4) &#123;</div><div class="line">            EventProcessor processor = var2[var4];</div><div class="line">            this.consumerRepository.add(processor);</div><div class="line">        &#125;</div><div class="line">        return new EventHandlerGroup(this, this.consumerRepository, Util.getSequencesFor(processors));</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public void publishEvent(EventTranslator&lt;T&gt; eventTranslator) &#123;</div><div class="line">        this.ringBuffer.publishEvent(eventTranslator);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public &lt;A&gt; void publishEvent(EventTranslatorOneArg&lt;T, A&gt; eventTranslator, A arg) &#123;</div><div class="line">        this.ringBuffer.publishEvent(eventTranslator, arg);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public &lt;A&gt; void publishEvents(EventTranslatorOneArg&lt;T, A&gt; eventTranslator, A[] arg) &#123;</div><div class="line">        this.ringBuffer.publishEvents(eventTranslator, arg);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public &lt;A, B&gt; void publishEvent(EventTranslatorTwoArg&lt;T, A, B&gt; eventTranslator, A arg0, B arg1) &#123;</div><div class="line">        this.ringBuffer.publishEvent(eventTranslator, arg0, arg1);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public &lt;A, B, C&gt; void publishEvent(EventTranslatorThreeArg&lt;T, A, B, C&gt; eventTranslator, A arg0, B arg1, C arg2) &#123;</div><div class="line">        this.ringBuffer.publishEvent(eventTranslator, arg0, arg1, arg2);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public RingBuffer&lt;T&gt; start() &#123;//遍历消费者，启动消费者线程</div><div class="line">        this.checkOnlyStartedOnce();</div><div class="line">        Iterator var1 = this.consumerRepository.iterator();</div><div class="line">        while(var1.hasNext()) &#123;</div><div class="line">            ConsumerInfo consumerInfo = (ConsumerInfo)var1.next();</div><div class="line">            consumerInfo.start(this.executor);</div><div class="line">        &#125; </div><div class="line">        return this.ringBuffer;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public void halt() &#123;</div><div class="line">        Iterator var1 = this.consumerRepository.iterator();</div><div class="line">        while(var1.hasNext()) &#123;</div><div class="line">            ConsumerInfo consumerInfo = (ConsumerInfo)var1.next();</div><div class="line">            consumerInfo.halt();</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public void shutdown() &#123;</div><div class="line">        try &#123;</div><div class="line">            this.shutdown(-1L, TimeUnit.MILLISECONDS);</div><div class="line">        &#125; catch (TimeoutException var2) &#123;</div><div class="line">            this.exceptionHandler.handleOnShutdownException(var2);</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public void shutdown(long timeout, TimeUnit timeUnit) throws TimeoutException &#123;</div><div class="line">        long timeOutAt = System.currentTimeMillis() + timeUnit.toMillis(timeout);</div><div class="line">        do &#123;</div><div class="line">            if(!this.hasBacklog()) &#123;</div><div class="line">                this.halt();</div><div class="line">                return;</div><div class="line">            &#125;</div><div class="line">        &#125; while(timeout &lt; 0L || System.currentTimeMillis() &lt;= timeOutAt); </div><div class="line">        throw TimeoutException.INSTANCE;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public RingBuffer&lt;T&gt; getRingBuffer() &#123;</div><div class="line">        return this.ringBuffer;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public long getCursor() &#123;</div><div class="line">        return this.ringBuffer.getCursor();</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public long getBufferSize() &#123;</div><div class="line">        return (long)this.ringBuffer.getBufferSize();</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public T get(long sequence) &#123;</div><div class="line">        return this.ringBuffer.get(sequence);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public SequenceBarrier getBarrierFor(EventHandler&lt;T&gt; handler) &#123;</div><div class="line">        return this.consumerRepository.getBarrierFor(handler);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public long getSequenceValueFor(EventHandler&lt;T&gt; b1) &#123;</div><div class="line">        return this.consumerRepository.getSequenceFor(b1).get();</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    private boolean hasBacklog() &#123;</div><div class="line">        long cursor = this.ringBuffer.getCursor();</div><div class="line">        Sequence[] var3 = this.consumerRepository.getLastSequenceInChain(false);</div><div class="line">        int var4 = var3.length;</div><div class="line">        for(int var5 = 0; var5 &lt; var4; ++var5) &#123;</div><div class="line">            Sequence consumer = var3[var5];</div><div class="line">            if(cursor &gt; consumer.get()) &#123;</div><div class="line">                return true;</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        return false;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    //1、创建BatchEventProcessor</div><div class="line">    //2、更新gatingSequence：取消跟踪barrierSequences，添加跟踪每个BatchEventProcessor(eventHandler).getSequence</div><div class="line">    //3、new EventHandlerGroup(consumerRepository.add(batchEventProcessor),Processor.getSequence())</div><div class="line">    EventHandlerGroup&lt;T&gt; createEventProcessors(Sequence[] barrierSequences, EventHandler&lt;? super T&gt;[] eventHandlers) &#123;</div><div class="line">        this.checkNotStarted();//检查是否已启动，启动后不能添加handler，抛异常</div><div class="line">        Sequence[] processorSequences = new Sequence[eventHandlers.length];</div><div class="line">        SequenceBarrier barrier = this.ringBuffer.newBarrier(barrierSequences);//一组handler共用一个序列屏障</div><div class="line">        int i = 0;</div><div class="line">        for(int eventHandlersLength = eventHandlers.length; i &lt; eventHandlersLength; ++i) &#123;</div><div class="line">            EventHandler eventHandler = eventHandlers[i];</div><div class="line">            BatchEventProcessor batchEventProcessor = new BatchEventProcessor(this.ringBuffer, barrier, eventHandler);//创建processor</div><div class="line">            if(this.exceptionHandler != null) &#123;</div><div class="line">                batchEventProcessor.setExceptionHandler(this.exceptionHandler);</div><div class="line">            &#125;</div><div class="line">            //添加到消费者仓库</div><div class="line">            this.consumerRepository.add(batchEventProcessor, eventHandler, barrier);</div><div class="line">            //获得processor记录的消费到的seq对象</div><div class="line">            processorSequences[i] = batchEventProcessor.getSequence();</div><div class="line">        &#125;</div><div class="line">        //更新Sequencer监听的消费者seq为最后一个消费者的seq，同时删除前置消费者的seq不再监听，修改前置消费者seq不为链上最后消费者seq</div><div class="line">        this.updateGatingSequencesForNextInChain(barrierSequences, processorSequences);</div><div class="line">        return new EventHandlerGroup(this, this.consumerRepository, processorSequences);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    //只需保证最慢的消费者seq不被生产者覆盖，前置消费者的seq不需要监听</div><div class="line">    private void updateGatingSequencesForNextInChain(Sequence[] barrierSequences, Sequence[] processorSequences) &#123;</div><div class="line">        if(processorSequences.length &gt; 0) &#123;</div><div class="line">            this.ringBuffer.addGatingSequences(processorSequences);//seq晚于barrierSequences，只需保证最慢的消费者seq不被生产者覆盖</div><div class="line">            Sequence[] var3 = barrierSequences;</div><div class="line">            int var4 = barrierSequences.length;</div><div class="line">            for(int var5 = 0; var5 &lt; var4; ++var5) &#123;</div><div class="line">                Sequence barrierSequence = var3[var5];</div><div class="line">                this.ringBuffer.removeGatingSequence(barrierSequence);//只需保证最慢的消费者seq不被生产者覆盖</div><div class="line">            &#125;</div><div class="line">            //设置前置消费者seq不是链上最后一个消费者seq</div><div class="line">            this.consumerRepository.unMarkEventProcessorsAsEndOfChain(barrierSequences);</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    EventHandlerGroup&lt;T&gt; createEventProcessors(Sequence[] barrierSequences, EventProcessorFactory&lt;T&gt;[] processorFactories) &#123;</div><div class="line">        EventProcessor[] eventProcessors = new EventProcessor[processorFactories.length];</div><div class="line">        for(int i = 0; i &lt; processorFactories.length; ++i) &#123;</div><div class="line">            eventProcessors[i] = processorFactories[i].createEventProcessor(this.ringBuffer, barrierSequences);</div><div class="line">        &#125;</div><div class="line">        return this.handleEventsWith(eventProcessors);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    EventHandlerGroup&lt;T&gt; createWorkerPool(Sequence[] barrierSequences, WorkHandler&lt;? super T&gt;[] workHandlers) &#123;</div><div class="line">        SequenceBarrier sequenceBarrier = this.ringBuffer.newBarrier(barrierSequences);</div><div class="line">        WorkerPool workerPool = new WorkerPool(this.ringBuffer, sequenceBarrier, this.exceptionHandler, workHandlers);</div><div class="line">        this.consumerRepository.add(workerPool, sequenceBarrier);</div><div class="line">        Sequence[] workerSequences = workerPool.getWorkerSequences();</div><div class="line">        this.updateGatingSequencesForNextInChain(barrierSequences, workerSequences);</div><div class="line">        return new EventHandlerGroup(this, this.consumerRepository, workerSequences);</div><div class="line"></div><div class="line">    &#125;</div><div class="line"></div><div class="line">    private void checkNotStarted() &#123;</div><div class="line">        if(this.started.get()) &#123;</div><div class="line">            throw new IllegalStateException(&quot;All event handlers must be added before calling starts.&quot;);</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    private void checkOnlyStartedOnce() &#123;</div><div class="line">        if(!this.started.compareAndSet(false, true)) &#123;</div><div class="line">            throw new IllegalStateException(&quot;Disruptor.start() must only be called once.&quot;);</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public String toString() &#123;</div><div class="line">        return &quot;Disruptor&#123;ringBuffer=&quot; + this.ringBuffer + &quot;, started=&quot; + this.started + &quot;, executor=&quot; + this.executor + &apos;&#125;&apos;;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="ConsumerInfo"><a href="#ConsumerInfo" class="headerlink" title="ConsumerInfo"></a>ConsumerInfo</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">interface ConsumerInfo &#123;</div><div class="line">    Sequence[] getSequences();</div><div class="line">    SequenceBarrier getBarrier();</div><div class="line">    boolean isEndOfChain();</div><div class="line">    void start(Executor var1);</div><div class="line">    void halt();</div><div class="line">    void markAsUsedInBarrier();</div><div class="line">    boolean isRunning();</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="EventProcessorInfo"><a href="#EventProcessorInfo" class="headerlink" title="EventProcessorInfo"></a>EventProcessorInfo<t></t></h3><p> 有点像适配器模式，或者代理模式，代理EventProcessor</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div></pre></td><td class="code"><pre><div class="line">class EventProcessorInfo&lt;T&gt; implements ConsumerInfo &#123;</div><div class="line">    private final EventProcessor eventprocessor;//事件处理线程</div><div class="line">    private final EventHandler&lt;? super T&gt; handler;//handler</div><div class="line">    private final SequenceBarrier barrier;</div><div class="line">    private boolean endOfChain = true;</div><div class="line"></div><div class="line">    EventProcessorInfo(EventProcessor eventprocessor, EventHandler&lt;? super T&gt; handler, SequenceBarrier barrier) &#123;</div><div class="line">        this.eventprocessor = eventprocessor;</div><div class="line">        this.handler = handler;</div><div class="line">        this.barrier = barrier;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public EventProcessor getEventProcessor() &#123;</div><div class="line">        return this.eventprocessor;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public Sequence[] getSequences() &#123;</div><div class="line">        return new Sequence[]&#123;this.eventprocessor.getSequence()&#125;;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public EventHandler&lt;? super T&gt; getHandler() &#123;</div><div class="line">        return this.handler;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public SequenceBarrier getBarrier() &#123;</div><div class="line">        return this.barrier;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public boolean isEndOfChain() &#123;</div><div class="line">        return this.endOfChain;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public void start(Executor executor) &#123;</div><div class="line">        executor.execute(this.eventprocessor);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public void halt() &#123;</div><div class="line">        this.eventprocessor.halt();</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public void markAsUsedInBarrier() &#123;</div><div class="line">        this.endOfChain = false;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public boolean isRunning() &#123;</div><div class="line">        return this.eventprocessor.isRunning();</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="WorkerPoolInfo"><a href="#WorkerPoolInfo" class="headerlink" title="WorkerPoolInfo"></a>WorkerPoolInfo<t></t></h3><p> 有点像适配器模式，或者代理模式，代理workerPool</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div></pre></td><td class="code"><pre><div class="line">class WorkerPoolInfo&lt;T&gt; implements ConsumerInfo &#123;</div><div class="line">    private final WorkerPool&lt;T&gt; workerPool;</div><div class="line">    private final SequenceBarrier sequenceBarrier;</div><div class="line">    private boolean endOfChain = true;</div><div class="line"></div><div class="line">    WorkerPoolInfo(WorkerPool&lt;T&gt; workerPool, SequenceBarrier sequenceBarrier) &#123;</div><div class="line">        this.workerPool = workerPool;</div><div class="line">        this.sequenceBarrier = sequenceBarrier;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public Sequence[] getSequences() &#123;</div><div class="line">        return this.workerPool.getWorkerSequences();</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public SequenceBarrier getBarrier() &#123;</div><div class="line">        return this.sequenceBarrier;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public boolean isEndOfChain() &#123;</div><div class="line">        return this.endOfChain;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public void start(Executor executor) &#123;</div><div class="line">        this.workerPool.start(executor);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public void halt() &#123;</div><div class="line">        this.workerPool.halt();</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public void markAsUsedInBarrier() &#123;</div><div class="line">        this.endOfChain = false;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public boolean isRunning() &#123;</div><div class="line">        return this.workerPool.isRunning();</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="ConsumerRepository"><a href="#ConsumerRepository" class="headerlink" title="ConsumerRepository"></a>ConsumerRepository<t></t></h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div></pre></td><td class="code"><pre><div class="line">class ConsumerRepository&lt;T&gt; implements Iterable&lt;ConsumerInfo&gt; &#123;</div><div class="line">    private final Map&lt;EventHandler&lt;?&gt;, EventProcessorInfo&lt;T&gt;&gt; eventProcessorInfoByEventHandler = new IdentityHashMap();//handler与Processor的一对一map</div><div class="line">    private final Map&lt;Sequence, ConsumerInfo&gt; eventProcessorInfoBySequence = new IdentityHashMap();//seq与processor的一对一map</div><div class="line">    private final Collection&lt;ConsumerInfo&gt; consumerInfos = new ArrayList();//processor</div><div class="line"></div><div class="line">    ConsumerRepository() &#123;</div><div class="line">    &#125;</div><div class="line">    //添加processor</div><div class="line">    public void add(EventProcessor eventprocessor, EventHandler&lt;? super T&gt; handler, SequenceBarrier barrier) &#123;</div><div class="line">        EventProcessorInfo consumerInfo = new EventProcessorInfo(eventprocessor, handler, barrier);</div><div class="line">        this.eventProcessorInfoByEventHandler.put(handler, consumerInfo);</div><div class="line">        this.eventProcessorInfoBySequence.put(eventprocessor.getSequence(), consumerInfo);</div><div class="line">        this.consumerInfos.add(consumerInfo);</div><div class="line">    &#125;</div><div class="line">    //添加processor</div><div class="line">    public void add(EventProcessor processor) &#123;</div><div class="line">        EventProcessorInfo consumerInfo = new EventProcessorInfo(processor, (EventHandler)null, (SequenceBarrier)null);</div><div class="line">        this.eventProcessorInfoBySequence.put(processor.getSequence(), consumerInfo);</div><div class="line">        this.consumerInfos.add(consumerInfo);</div><div class="line">    &#125;</div><div class="line">    //添加WorkerPool</div><div class="line">    public void add(WorkerPool&lt;T&gt; workerPool, SequenceBarrier sequenceBarrier) &#123;</div><div class="line">        WorkerPoolInfo workerPoolInfo = new WorkerPoolInfo(workerPool, sequenceBarrier);</div><div class="line">        this.consumerInfos.add(workerPoolInfo);</div><div class="line">        Sequence[] var4 = workerPool.getWorkerSequences();//每个processor的seq及公共workSeq</div><div class="line">        int var5 = var4.length;</div><div class="line"></div><div class="line">        for(int var6 = 0; var6 &lt; var5; ++var6) &#123;</div><div class="line">            Sequence sequence = var4[var6];</div><div class="line">            this.eventProcessorInfoBySequence.put(sequence, workerPoolInfo);//processor的Seq及workSeq都指向workerPoolInfo</div><div class="line">        &#125;</div><div class="line"></div><div class="line">    &#125;</div><div class="line">    //获得处理链上的最后一个消费者消费到的Seqs</div><div class="line">    public Sequence[] getLastSequenceInChain(boolean includeStopped) &#123;//是否包含已停止的消费者</div><div class="line">        ArrayList lastSequence = new ArrayList();</div><div class="line">        Iterator var3 = this.consumerInfos.iterator();</div><div class="line"></div><div class="line">        while(true) &#123;</div><div class="line">            ConsumerInfo consumerInfo;</div><div class="line">            do &#123;</div><div class="line">                if(!var3.hasNext()) &#123;//消费者为空，遍历完成</div><div class="line">                    return (Sequence[])lastSequence.toArray(new Sequence[lastSequence.size()]);</div><div class="line">                &#125;</div><div class="line"></div><div class="line">                consumerInfo = (ConsumerInfo)var3.next();//不为空则取出消费者</div><div class="line">            &#125; while(!includeStopped &amp;&amp; !consumerInfo.isRunning());//如不包含已停止的，且已停止，继续遍历直到碰到未停止的，判断是否是最后一个消费者，如果包含已停止的，则继续下面的代码</div><div class="line"></div><div class="line">            if(consumerInfo.isEndOfChain()) &#123;//是否是最后一个消费者</div><div class="line">                Sequence[] sequences = consumerInfo.getSequences();//获得当前处理到的seq，如果是BatchEventProcess数量为1，如果是WorkerPool则为多个：每个Processor的Seq+workSeq</div><div class="line">                Collections.addAll(lastSequence, sequences);</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public EventProcessor getEventProcessorFor(EventHandler&lt;T&gt; handler) &#123;</div><div class="line">        EventProcessorInfo eventprocessorInfo = this.getEventProcessorInfo(handler);</div><div class="line">        if(eventprocessorInfo == null) &#123;</div><div class="line">            throw new IllegalArgumentException(&quot;The event handler &quot; + handler + &quot; is not processing events.&quot;);</div><div class="line">        &#125; else &#123;</div><div class="line">            return eventprocessorInfo.getEventProcessor();</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public Sequence getSequenceFor(EventHandler&lt;T&gt; handler) &#123;</div><div class="line">        return this.getEventProcessorFor(handler).getSequence();</div><div class="line">    &#125;</div><div class="line">    //设置这些Processor不为最后一个Processor</div><div class="line">    public void unMarkEventProcessorsAsEndOfChain(Sequence... barrierEventProcessors) &#123;</div><div class="line">        Sequence[] var2 = barrierEventProcessors;</div><div class="line">        int var3 = barrierEventProcessors.length;</div><div class="line"></div><div class="line">        for(int var4 = 0; var4 &lt; var3; ++var4) &#123;</div><div class="line">            Sequence barrierEventProcessor = var2[var4];</div><div class="line">            this.getEventProcessorInfo(barrierEventProcessor).markAsUsedInBarrier();</div><div class="line">        &#125;</div><div class="line"></div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public Iterator&lt;ConsumerInfo&gt; iterator() &#123;</div><div class="line">        return this.consumerInfos.iterator();</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public SequenceBarrier getBarrierFor(EventHandler&lt;T&gt; handler) &#123;</div><div class="line">        EventProcessorInfo consumerInfo = this.getEventProcessorInfo(handler);</div><div class="line">        return consumerInfo != null?consumerInfo.getBarrier():null;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    private EventProcessorInfo&lt;T&gt; getEventProcessorInfo(EventHandler&lt;T&gt; handler) &#123;</div><div class="line">        return (EventProcessorInfo)this.eventProcessorInfoByEventHandler.get(handler);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    private ConsumerInfo getEventProcessorInfo(Sequence barrierEventProcessor) &#123;</div><div class="line">        return (ConsumerInfo)this.eventProcessorInfoBySequence.get(barrierEventProcessor);</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="EventHandlerGroup"><a href="#EventHandlerGroup" class="headerlink" title="EventHandlerGroup"></a>EventHandlerGroup<t></t></h2><p>消费者组，维护consumerRepository与Sequence[]（每个消费者（Processor）处理到的seq） </p>
+<ol>
+<li>必须先通过Disruptor.handleEventsWith等方法实例化EventHandlerGroup，再调用其相应的方法</li>
+<li>handleEventsWith()：添加handler，实际是调用disruptor.createEventProcessors创建BatchEventProcessor或disruptor.createWorkerPool创建WorkPool，更新是否为EndChain及gatingSequence</li>
+<li>and()：合并EventHandlerGroup / 添加EventProcessor，更新consumerRepository及Sequence[]</li>
+<li>then()：添加后置消费者，实际调用handleEventsWith()<ol>
+<li>创建Barrier，调用disruptor.getRingBuffer().newBarrier(this.sequences);</li>
+</ol>
+</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div></pre></td><td class="code"><pre><div class="line"> public class EventHandlerGroup&lt;T&gt; &#123;   </div><div class="line">    private final Disruptor&lt;T&gt; disruptor;</div><div class="line">    private final ConsumerRepository&lt;T&gt; consumerRepository;</div><div class="line">    private final Sequence[] sequences;</div><div class="line"></div><div class="line">    EventHandlerGroup(Disruptor&lt;T&gt; disruptor, ConsumerRepository&lt;T&gt; consumerRepository, Sequence[] sequences) &#123;</div><div class="line">        this.disruptor = disruptor;</div><div class="line">        this.consumerRepository = consumerRepository;</div><div class="line">        this.sequences = (Sequence[])Arrays.copyOf(sequences, sequences.length);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public EventHandlerGroup&lt;T&gt; and(EventHandlerGroup&lt;T&gt; otherHandlerGroup) &#123;</div><div class="line">        Sequence[] combinedSequences = new Sequence[this.sequences.length + otherHandlerGroup.sequences.length];</div><div class="line">        System.arraycopy(this.sequences, 0, combinedSequences, 0, this.sequences.length);</div><div class="line">        System.arraycopy(otherHandlerGroup.sequences, 0, combinedSequences, this.sequences.length, otherHandlerGroup.sequences.length);</div><div class="line">        return new EventHandlerGroup(this.disruptor, this.consumerRepository, combinedSequences);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public EventHandlerGroup&lt;T&gt; and(EventProcessor... processors) &#123;</div><div class="line">        Sequence[] combinedSequences = new Sequence[this.sequences.length + processors.length];</div><div class="line"></div><div class="line">        for(int i = 0; i &lt; processors.length; ++i) &#123;</div><div class="line">            this.consumerRepository.add(processors[i]);</div><div class="line">            combinedSequences[i] = processors[i].getSequence();</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        System.arraycopy(this.sequences, 0, combinedSequences, processors.length, this.sequences.length);</div><div class="line">        return new EventHandlerGroup(this.disruptor, this.consumerRepository, combinedSequences);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public EventHandlerGroup&lt;T&gt; then(EventHandler... handlers) &#123;</div><div class="line">        return this.handleEventsWith(handlers);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public EventHandlerGroup&lt;T&gt; then(EventProcessorFactory... eventProcessorFactories) &#123;</div><div class="line">        return this.handleEventsWith(eventProcessorFactories);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public EventHandlerGroup&lt;T&gt; thenHandleEventsWithWorkerPool(WorkHandler... handlers) &#123;</div><div class="line">        return this.handleEventsWithWorkerPool(handlers);</div><div class="line">    &#125;</div><div class="line">    //添加handler</div><div class="line">    public EventHandlerGroup&lt;T&gt; handleEventsWith(EventHandler... handlers) &#123;</div><div class="line">        return this.disruptor.createEventProcessors(this.sequences, handlers);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public EventHandlerGroup&lt;T&gt; handleEventsWith(EventProcessorFactory... eventProcessorFactories) &#123;</div><div class="line">        return this.disruptor.createEventProcessors(this.sequences, eventProcessorFactories);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public EventHandlerGroup&lt;T&gt; handleEventsWithWorkerPool(WorkHandler... handlers) &#123;</div><div class="line">        return this.disruptor.createWorkerPool(this.sequences, handlers);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public SequenceBarrier asSequenceBarrier() &#123;</div><div class="line">        return this.disruptor.getRingBuffer().newBarrier(this.sequences);</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h1 id="使用样例"><a href="#使用样例" class="headerlink" title="使用样例"></a>使用样例</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line">public static void main(String[] args) &#123;</div><div class="line">        ThreadFactory threadFactory=Executors.defaultThreadFactory();</div><div class="line">        int bufferSize = 1024;</div><div class="line">        Disruptor&lt;EventEntity&gt; disruptor=new Disruptor&lt;EventEntity&gt;(new TrapEventFactory(),bufferSize,threadFactory);</div><div class="line">        Disruptor&lt;EventEntity&gt; disruptor2=new Disruptor&lt;EventEntity&gt;(new TrapEventFactory(),bufferSize,threadFactory);</div><div class="line">		//接收disruptor的消息进行过滤后，让如disruptor2</div><div class="line">        FlitHandler flitHandler=new FlitHandler(disruptor2);</div><div class="line">        ConversionHandler conversionHandler=new ConversionHandler();</div><div class="line">        EnrichHandler enrichHandler=new EnrichHandler();</div><div class="line">        SendHandler sendHandler=new SendHandler();</div><div class="line">        disruptor.handleEventsWith(flitHandler);</div><div class="line">        //先执行conversionHandler,enrichHandler，最后执行sendHandler</div><div class="line">        disruptor2.handleEventsWith(conversionHandler,enrichHandler).then(sendHandler);</div><div class="line">        disruptor.start();</div><div class="line">        disruptor2.start();</div><div class="line">        log.info(&quot;disruptor start&quot;);</div><div class="line">        //生产者</div><div class="line">        Executor executor = Executors.newFixedThreadPool(10);</div><div class="line">        EventProducer producer = new EventProducer(disruptor);</div><div class="line">        executor.execute(producer);</div><div class="line">    &#125;</div></pre></td></tr></table></figure>
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="http://oulmk4pq1.bkt.clouddn.com/rockynote.png" alt="老祁 wechat" style="width: 200px; max-width: 100%;"/>
+    <div>扫一扫，用手机访问本站</div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div></div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="http://oulmk4pq1.bkt.clouddn.com/wechat_in.png" alt="老祁 WeChat Pay"/>
+        <p>微信打赏</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="http://oulmk4pq1.bkt.clouddn.com/alipay_in.png" alt="老祁 Alipay"/>
+        <p>支付宝打赏</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/disruptor/" rel="tag"># disruptor</a>
+          
+            <a href="/tags/cas/" rel="tag"># cas</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/08/27/Create-a-Blog-with-Hexo/" rel="next" title="Create a Blog with Hexo">
+                <i class="fa fa-chevron-left"></i> Create a Blog with Hexo
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/02/07/Jave-Unsafe/" rel="prev" title="Jave Unsafe类源码解析">
+                Jave Unsafe类源码解析 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+<span class="jiathis_txt">分享到：</span>
+<a class="jiathis_button_fav">收藏夹</a>
+<a class="jiathis_button_copy">复制网址</a>
+<a class="jiathis_button_email">邮件</a>
+<a class="jiathis_button_weixin">微信</a>
+<a class="jiathis_button_qzone">QQ空间</a>
+<a class="jiathis_button_tqq">腾讯微薄</a>
+<a class="jiathis_button_douban">豆瓣</a>
+<a class="jiathis_button_share">一键分享</a>
+
+<a href="http://www.jiathis.com/share?uid=2140465" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+var jiathis_config={
+  data_track_clickback:true,
+  summary:"",
+  shortUrl:false,
+  hideMore:false
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=2141554" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="老祁" />
+          <p class="site-author-name" itemprop="name">老祁</p>
+           
+              <p class="site-description motion-element" itemprop="description">老祁的笔记</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">12</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">25</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/xingsheq" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/iterator" target="_blank" title="Weibo">
+                  
+                    <i class="fa fa-fw fa-weibo"></i>
+                  
+                    
+                      Weibo
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-link"></i>
+              友情链接
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://qijiaoshou.com" title="祁较瘦" target="_blank">祁较瘦</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#基础知识"><span class="nav-number">1.</span> <span class="nav-text">基础知识</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#交互图"><span class="nav-number">2.</span> <span class="nav-text">交互图</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#生产者"><span class="nav-number">2.1.</span> <span class="nav-text">生产者</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#消费者"><span class="nav-number">2.2.</span> <span class="nav-text">消费者</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#source"><span class="nav-number">3.</span> <span class="nav-text">source</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Sequence"><span class="nav-number">3.1.</span> <span class="nav-text">Sequence</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#FixedSequenceGroup"><span class="nav-number">3.1.1.</span> <span class="nav-text">FixedSequenceGroup</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Sequencer"><span class="nav-number">3.2.</span> <span class="nav-text">Sequencer</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#AbstractSequencer"><span class="nav-number">3.2.1.</span> <span class="nav-text">AbstractSequencer</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SingleProducerSequencer"><span class="nav-number">3.2.2.</span> <span class="nav-text">SingleProducerSequencer</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#MultiProducerSequencer"><span class="nav-number">3.2.3.</span> <span class="nav-text">MultiProducerSequencer</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SequenceBarrier"><span class="nav-number">3.3.</span> <span class="nav-text">SequenceBarrier</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#ProcessingSequenceBarrier"><span class="nav-number">3.3.1.</span> <span class="nav-text">ProcessingSequenceBarrier</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#BlockingWaitStrategy"><span class="nav-number">3.3.2.</span> <span class="nav-text">BlockingWaitStrategy</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RingBuffer"><span class="nav-number">3.4.</span> <span class="nav-text">RingBuffer</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#EventProcessor"><span class="nav-number">3.5.</span> <span class="nav-text">EventProcessor</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#BatchEventProcessor"><span class="nav-number">3.5.1.</span> <span class="nav-text">BatchEventProcessor</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#EventHandler"><span class="nav-number">3.5.1.1.</span> <span class="nav-text">EventHandler</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#WorkProcessor"><span class="nav-number">3.5.2.</span> <span class="nav-text">WorkProcessor</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#WorkerPool"><span class="nav-number">3.5.2.1.</span> <span class="nav-text">WorkerPool</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#WorkHandler"><span class="nav-number">3.5.2.2.</span> <span class="nav-text">WorkHandler</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#DSL"><span class="nav-number">4.</span> <span class="nav-text">DSL</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Disruptor"><span class="nav-number">4.1.</span> <span class="nav-text">Disruptor</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ConsumerInfo"><span class="nav-number">4.2.</span> <span class="nav-text">ConsumerInfo</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#EventProcessorInfo"><span class="nav-number">4.2.1.</span> <span class="nav-text">EventProcessorInfo</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#WorkerPoolInfo"><span class="nav-number">4.2.2.</span> <span class="nav-text">WorkerPoolInfo</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ConsumerRepository"><span class="nav-number">4.3.</span> <span class="nav-text">ConsumerRepository</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#EventHandlerGroup"><span class="nav-number">4.4.</span> <span class="nav-text">EventHandlerGroup</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#使用样例"><span class="nav-number">5.</span> <span class="nav-text">使用样例</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">老祁</span>
+
+  
+</div>
+
+
+  <div class="powered-by">
+    由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+  </div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">
+    主题 &mdash;
+    <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+      NexT.Pisces
+    </a>
+  </div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+  <script src="https://cdn1.lncld.net/static/js/av-core-mini-0.6.4.js"></script>
+  <script>AV.initialize("XI4CVU7uevOpiu2KjmNMjcd4-gzGzoHsz", "tkrUmr1nl8g9tydH1yf7LJiQ");</script>
+  <script>
+    function showTime(Counter) {
+      var query = new AV.Query(Counter);
+      var entries = [];
+      var $visitors = $(".leancloud_visitors");
+
+      $visitors.each(function () {
+        entries.push( $(this).attr("id").trim() );
+      });
+
+      query.containedIn('url', entries);
+      query.find()
+        .done(function (results) {
+          var COUNT_CONTAINER_REF = '.leancloud-visitors-count';
+
+          if (results.length === 0) {
+            $visitors.find(COUNT_CONTAINER_REF).text(0);
+            return;
+          }
+
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.get('url');
+            var time = item.get('time');
+            var element = document.getElementById(url);
+
+            $(element).find(COUNT_CONTAINER_REF).text(time);
+          }
+          for(var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = document.getElementById(url);
+            var countSpan = $(element).find(COUNT_CONTAINER_REF);
+            if( countSpan.text() == '') {
+              countSpan.text(0);
+            }
+          }
+        })
+        .fail(function (object, error) {
+          console.log("Error: " + error.code + " " + error.message);
+        });
+    }
+
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+      var query = new AV.Query(Counter);
+
+      query.equalTo("url", url);
+      query.find({
+        success: function(results) {
+          if (results.length > 0) {
+            var counter = results[0];
+            counter.fetchWhenSave(true);
+            counter.increment("time");
+            counter.save(null, {
+              success: function(counter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(counter.get('time'));
+              },
+              error: function(counter, error) {
+                console.log('Failed to save Visitor num, with error message: ' + error.message);
+              }
+            });
+          } else {
+            var newcounter = new Counter();
+            /* Set ACL */
+            var acl = new AV.ACL();
+            acl.setPublicReadAccess(true);
+            acl.setPublicWriteAccess(true);
+            newcounter.setACL(acl);
+            /* End Set ACL */
+            newcounter.set("title", title);
+            newcounter.set("url", url);
+            newcounter.set("time", 1);
+            newcounter.save(null, {
+              success: function(newcounter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(newcounter.get('time'));
+              },
+              error: function(newcounter, error) {
+                console.log('Failed to create');
+              }
+            });
+          }
+        },
+        error: function(error) {
+          console.log('Error:' + error.code + " " + error.message);
+        }
+      });
+    }
+
+    $(function() {
+      var Counter = AV.Object.extend("Counter");
+      if ($('.leancloud_visitors').length == 1) {
+        addCount(Counter);
+      } else if ($('.post-title-link').length > 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

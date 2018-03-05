@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="java,Unsafe," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="Unsafe创建UnSafe实例默认必须是Java jdk自身类才能getUnsafe()获得实例 12345678910public static Unsafe getUnsafe() &amp;#123;    Class var0 = Reflection.getCallerClass();    //判断是否是JDK内部专属的类，是则可以使用，否者抛出异常。    //JDK内部专属的类使用系统类">
+<meta name="keywords" content="java,Unsafe">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Jave Unsafe类源码解析">
+<meta property="og:url" content="http://rockynote.com/2018/02/07/Jave-Unsafe/index.html">
+<meta property="og:site_name" content="老祁笔记">
+<meta property="og:description" content="Unsafe创建UnSafe实例默认必须是Java jdk自身类才能getUnsafe()获得实例 12345678910public static Unsafe getUnsafe() &amp;#123;    Class var0 = Reflection.getCallerClass();    //判断是否是JDK内部专属的类，是则可以使用，否者抛出异常。    //JDK内部专属的类使用系统类">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2018-03-05T07:15:08.232Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Jave Unsafe类源码解析">
+<meta name="twitter:description" content="Unsafe创建UnSafe实例默认必须是Java jdk自身类才能getUnsafe()获得实例 12345678910public static Unsafe getUnsafe() &amp;#123;    Class var0 = Reflection.getCallerClass();    //判断是否是JDK内部专属的类，是则可以使用，否者抛出异常。    //JDK内部专属的类使用系统类">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://rockynote.com/2018/02/07/Jave-Unsafe/"/>
+
+
+
+
+
+  <title>Jave Unsafe类源码解析 | 老祁笔记</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-105730821-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">老祁笔记</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Rocky's notes</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://rockynote.com/2018/02/07/Jave-Unsafe/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="老祁">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="老祁笔记">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Jave Unsafe类源码解析</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-02-07T08:23:56+00:00">
+                2018-02-07
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/jdk/" itemprop="url" rel="index">
+                    <span itemprop="name">jdk</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+             <span id="/2018/02/07/Jave-Unsafe/" class="leancloud_visitors" data-flag-title="Jave Unsafe类源码解析">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数&#58;</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="Unsafe"><a href="#Unsafe" class="headerlink" title="Unsafe"></a>Unsafe</h1><h2 id="创建UnSafe实例"><a href="#创建UnSafe实例" class="headerlink" title="创建UnSafe实例"></a>创建UnSafe实例</h2><p>默认必须是Java jdk自身类才能getUnsafe()获得实例</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">public static Unsafe getUnsafe() &#123;</div><div class="line">    Class var0 = Reflection.getCallerClass();</div><div class="line">    //判断是否是JDK内部专属的类，是则可以使用，否者抛出异常。</div><div class="line">    //JDK内部专属的类使用系统类加载器加载(系统类加载器为null)</div><div class="line">    if(!VM.isSystemDomainLoader(var0.getClassLoader())) &#123;</div><div class="line">        throw new SecurityException(&quot;Unsafe&quot;);</div><div class="line">    &#125; else &#123;</div><div class="line">        return theUnsafe;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>如果个人想要使用UnSafe类，可以通过反射获得Unsafe对象，theUnsafe是Unsafe的Field</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">static &#123;</div><div class="line">        try &#123;</div><div class="line">            PrivilegedExceptionAction e = new PrivilegedExceptionAction() &#123;</div><div class="line">                public Unsafe run() throws Exception &#123;</div><div class="line">                    Field theUnsafe = Unsafe.class.getDeclaredField(&quot;theUnsafe&quot;);</div><div class="line">                    theUnsafe.setAccessible(true);</div><div class="line">                    return (Unsafe)theUnsafe.get((Object)null);</div><div class="line">                &#125;</div><div class="line">            &#125;;</div><div class="line">            THE_UNSAFE = (Unsafe) AccessController.doPrivileged(e);</div><div class="line">        &#125; catch (Exception var1) &#123;</div><div class="line">            throw new RuntimeException(&quot;Unable to load unsafe&quot;, var1);</div><div class="line">        &#125;</div><div class="line">    &#125;</div></pre></td></tr></table></figure>
+<h2 id="对象内存结构"><a href="#对象内存结构" class="headerlink" title="对象内存结构"></a>对象内存结构</h2><p>可获得/设置对象内存结构中各偏移量offSet（相对于对象在内存中的起始位置的偏移）位置的数据</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">//获得对象（包含数组）中偏移量offset的int值，当为数组时，意思为指定数组元素指向的内存或值</div><div class="line">public native int getInt(Object obj, long offSet);</div><div class="line"></div><div class="line">//设置对象中偏移量offSet的值为value</div><div class="line">public native void putInt(Object obj, long offSet, int value);</div><div class="line"></div><div class="line">其他类似</div><div class="line">Object/Boolean/Byte/Short/Char/Long/Float/Double</div></pre></td></tr></table></figure>
+<h2 id="内存位置"><a href="#内存位置" class="headerlink" title="内存位置"></a>内存位置</h2><p>可直接操控内存位置</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">//获得堆外offSet位置的byte值</div><div class="line">public native byte getByte(long position);</div><div class="line"></div><div class="line">//在堆外offSet位置,设置内容value</div><div class="line">public native void putByte(long position, byte value);</div><div class="line"></div><div class="line">其他类似</div><div class="line">/Short/Char/Long/Float/Double</div></pre></td></tr></table></figure>
+<h2 id="内存分配-复制-释放"><a href="#内存分配-复制-释放" class="headerlink" title="内存分配/复制/释放"></a>内存分配/复制/释放</h2><p>UnSafe的内存分配在堆外，尽量自己释放内存，编码内存溢出OOM</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div></pre></td><td class="code"><pre><div class="line">//获得var1指向的内存地址</div><div class="line">public native long getAddress(long var1);</div><div class="line"></div><div class="line">//设置var1指向var3</div><div class="line">public native void putAddress(long var1, long var3);</div><div class="line"></div><div class="line">//分配var1字节大小的内存，返回起始地址偏移量</div><div class="line">public native long allocateMemory(long var1);</div><div class="line"></div><div class="line">//重新给var1起始地址的内存分配长度为var3字节大小的内存，返回新的内存起始地址偏移量</div><div class="line">public native long reallocateMemory(long var1, long var3);</div><div class="line"></div><div class="line">//给定的内存块设置value</div><div class="line">public native void setMemory(Object obj, long offSet, long bytes, byte value);</div><div class="line"></div><div class="line">//给定的内存块设置value</div><div class="line">public void setMemory(long offSet, long bytes, byte value) &#123;</div><div class="line">        this.setMemory((Object)null, var1, var3, var5);</div><div class="line">&#125;</div><div class="line">//从srcObj对象的srcOffset位置开始复制bytes个字节到destObj（从destOffset开始）</div><div class="line">public native void copyMemory(Object srcObj, long srcOffset, Object destObj, long destOffset, long bytes);</div><div class="line"></div><div class="line">//从srcOffset复制bytes个字节到destOffset开始的内存块</div><div class="line">public void copyMemory(long srcOffset, long destOffset, long bytes) &#123;</div><div class="line">        this.copyMemory((Object)null, var1, (Object)null, var3, var5);</div><div class="line">&#125;</div><div class="line">//释放起始地址为var1的内存</div><div class="line">public native void freeMemory(long var1);</div></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">//获取本机内存的页数，这个值永远都是2的幂次方</div><div class="line">public native int pageSize();</div><div class="line"></div><div class="line">public native int addressSize();</div></pre></td></tr></table></figure>
+<h2 id="数组"><a href="#数组" class="headerlink" title="数组"></a>数组</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">//获取数组中第一个元素的偏移量(get offset of a first element in the array)，如果是对象数组，这个offSet存的数据为对象的引用内存地址，可通过UNSAFE.getLong(array,offSet)获得</div><div class="line">public native int arrayBaseOffset(java.lang.Class aClass);</div><div class="line"></div><div class="line">//获取数组中一个元素的大小(get size of an element in the array)  </div><div class="line">public native int arrayIndexScale(java.lang.Class aClass);</div></pre></td></tr></table></figure>
+<h2 id="对象Field"><a href="#对象Field" class="headerlink" title="对象Field"></a>对象Field</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">//获取字节对象中非静态方法的偏移量,不管这个字段是private，public还是保护类型</div><div class="line">public native long objectFieldOffset(java.lang.reflect.Field field);  </div><div class="line"></div><div class="line">//获取静态变量所属的类在方法区的首地址</div><div class="line">public native long staticFieldOffset(Field var1);</div><div class="line"></div><div class="line">//获取一个给定静态Field所在的Class对象</div><div class="line">public native Object staticFieldBase(Field f);</div></pre></td></tr></table></figure>
+<h2 id="类"><a href="#类" class="headerlink" title="类"></a>类</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">//告诉虚拟机定义了一个没有安全检查的类，默认情况下这个类加载器和保护域来着调用者类</div><div class="line">public native Class&lt;?&gt; defineClass(String var1, byte[] classContent, int begin, int classContentLength, ClassLoader var5, ProtectionDomain var6);</div><div class="line"></div><div class="line">//定义一个类，但是不让它知道类加载器和系统字典</div><div class="line">public native Class&lt;?&gt; defineAnonymousClass(Class&lt;?&gt; var1, byte[] classContent, Object[] cpPatches);</div><div class="line"></div><div class="line">//实例化对象，不调用构造函数</div><div class="line">public native Object allocateInstance(Class&lt;?&gt; var1) throws InstantiationException;</div><div class="line"></div><div class="line">//给定class是否应被初始化</div><div class="line">public native boolean shouldBeInitialized(Class&lt;?&gt; var1);</div><div class="line"></div><div class="line">//确保给定class被初始化，这往往需要结合基类的静态域（field）</div><div class="line">public native void ensureClassInitialized(Class c);</div></pre></td></tr></table></figure>
+<h2 id="异常"><a href="#异常" class="headerlink" title="异常"></a>异常</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">//包装异常为运行时异常</div><div class="line">public native void throwException(Throwable var1);</div></pre></td></tr></table></figure>
+<h2 id="CAS"><a href="#CAS" class="headerlink" title="CAS"></a>CAS</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">public final native boolean compareAndSwapObject(Object obj, long address, Object oldValue, Object newValue);</div><div class="line"></div><div class="line">public final native boolean compareAndSwapInt(Object obj, long address, int oldValue, int newValue);</div><div class="line"></div><div class="line">public final native boolean compareAndSwapLong(Object obj, long address, long oldValue, long newValue);</div></pre></td></tr></table></figure>
+<h2 id="get-putXXVolatile"><a href="#get-putXXVolatile" class="headerlink" title="get/putXXVolatile"></a>get/putXXVolatile</h2><p>内存屏障+立即可见，写操作使用较慢的存储-加载(store-load) barrier</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">//获得对象offSet的值，支持volatile load语义</div><div class="line">public native Object getObjectVolatile(Object obj, long offSet);</div><div class="line"></div><div class="line">//设置对象offSet的值，支持volatile load语义，</div><div class="line">public native void putObjectVolatile(Object obj, long offSet, Object value);</div><div class="line"></div><div class="line">其他类似</div><div class="line">Int/Boolean/Byte/Short/Char/Long/Float/Double</div></pre></td></tr></table></figure>
+<h2 id="putOrderedObject-Int-Long"><a href="#putOrderedObject-Int-Long" class="headerlink" title="putOrderedObject/Int/Long"></a>putOrderedObject/Int/Long</h2><p>是putObjectVolatile的内存屏障非立即可见版本，使用的是快速的存储-存储(store-store) barrier</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">public native void putOrderedObject(Object var1, long var2, Object var4);</div><div class="line"></div><div class="line">public native void putOrderedInt(Object var1, long var2, int var4);</div><div class="line"></div><div class="line">public native void putOrderedLong(Object var1, long var2, long var4);</div></pre></td></tr></table></figure>
+<h2 id="线程park-unpark"><a href="#线程park-unpark" class="headerlink" title="线程park/unpark"></a>线程park/unpark</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">//解除阻塞线程</div><div class="line">public native void unpark(Object thread);</div><div class="line">//阻塞当前线程，boolean:true,绝对时间毫秒，false:相对时间，纳秒</div><div class="line">public native void park(boolean var1, long var2);</div></pre></td></tr></table></figure>
+<p>将一个线程进行挂起是通过park方法实现的，调用 park后，线程将一直阻塞直到超时或者中断等条件出现。unpark可以终止一个挂起的线程，使其恢复正常。整个并发框架中对线程的挂起操作被封装在 LockSupport类中，LockSupport类中有各种版本pack方法，但最终都调用了Unsafe.park()方法。</p>
+<h2 id="获取负载"><a href="#获取负载" class="headerlink" title="获取负载"></a>获取负载</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">//获取系统在不同时间系统的负载情况</div><div class="line">public native int getLoadAverage(double[] loadavg, int nelems);</div></pre></td></tr></table></figure>
+<h2 id="getAndAddXX"><a href="#getAndAddXX" class="headerlink" title="getAndAddXX"></a>getAndAddXX</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line">public final int getAndAddInt(Object var1, long var2, int var4) &#123;</div><div class="line">        int var5;</div><div class="line">        do &#123;</div><div class="line">            var5 = this.getIntVolatile(var1, var2);</div><div class="line">        &#125; while(!this.compareAndSwapInt(var1, var2, var5, var5 + var4));</div><div class="line">        return var5;</div><div class="line">    &#125;</div><div class="line">public final long getAndAddLong(Object var1, long var2, long var4) &#123;&#125;</div><div class="line">   </div><div class="line">public final int getAndSetInt(Object var1, long var2, int var4) &#123;</div><div class="line">        int var5;</div><div class="line">        do &#123;</div><div class="line">            var5 = this.getIntVolatile(var1, var2);</div><div class="line">        &#125; while(!this.compareAndSwapInt(var1, var2, var5, var4));</div><div class="line">        return var5;</div><div class="line">&#125;</div><div class="line"></div><div class="line">public final long getAndSetLong(Object var1, long var2, long var4) &#123;&#125;</div><div class="line"></div><div class="line">public final Object getAndSetObject(Object var1, long var2, Object var4) &#123;&#125;</div></pre></td></tr></table></figure>
+<h2 id="内存屏障"><a href="#内存屏障" class="headerlink" title="内存屏障"></a>内存屏障</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">public native void loadFence();</div><div class="line">public native void storeFence();</div><div class="line">public native void fullFence();</div></pre></td></tr></table></figure>
+<h1 id="使用案例"><a href="#使用案例" class="headerlink" title="使用案例"></a>使用案例</h1><h2 id="非常规的对象实例化"><a href="#非常规的对象实例化" class="headerlink" title="非常规的对象实例化"></a>非常规的对象实例化</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">public native Object allocateInstance(Class&lt;?&gt; var1) throws InstantiationException;</div></pre></td></tr></table></figure>
+<ul>
+<li>allocateInstance()方法提供了另一种创建实例的途径。通常我们可以用new或者反射来实例化对象，使用allocateInstance()方法可以直接生成对象实例，且无需调用构造方法和其它初始化方法。</li>
+<li>这在对象反序列化的时候会很有用，能够重建和设置final字段，而不需要调用构造方法。</li>
+</ul>
+<h2 id="修改对象属性"><a href="#修改对象属性" class="headerlink" title="修改对象属性"></a>修改对象属性</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">public class TrapEntity &#123;</div><div class="line">    int id;</div><div class="line">    String alarmName;</div><div class="line">    public int getId() &#123;</div><div class="line">        return id;</div><div class="line">    &#125;</div><div class="line">    public void setId(int id) &#123;</div><div class="line">        this.id = id;</div><div class="line">    &#125;</div><div class="line">    public String getAlarmName() &#123;</div><div class="line">        return alarmName;</div><div class="line">    &#125;</div><div class="line">    public void setAlarmName(String alarmName) &#123;</div><div class="line">        this.alarmName = alarmName;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div></pre></td><td class="code"><pre><div class="line">//通过offSet修改对象属性</div><div class="line">   private static void changeValueByOffSetTest() &#123;</div><div class="line">       TrapEntity entity = new TrapEntity();</div><div class="line">       entity.setId(1);</div><div class="line">       entity.setAlarmName(&quot;alarm1&quot;);</div><div class="line">       try &#123;</div><div class="line">           long alarmNameOffSet = UNSAFE.objectFieldOffset(entity.getClass().getDeclaredField(&quot;alarmName&quot;));</div><div class="line">           long idOffSet = UNSAFE.objectFieldOffset(entity.getClass().getDeclaredField(&quot;id&quot;));</div><div class="line">           System.out.println(alarmNameOffSet);</div><div class="line">           UNSAFE.putObject(entity, alarmNameOffSet, &quot;alarmName2&quot;);</div><div class="line">           System.out.println(entity.getAlarmName());</div><div class="line">           System.out.println(idOffSet);</div><div class="line">           UNSAFE.putInt(entity, idOffSet, 2);</div><div class="line">           System.out.println(entity.getId());</div><div class="line"></div><div class="line">       &#125; catch (NoSuchFieldException e) &#123;</div><div class="line">           e.printStackTrace();</div><div class="line">       &#125;</div><div class="line">   &#125;</div><div class="line">       </div><div class="line">//通过内存位置修改对象属性</div><div class="line">   private static void changeValueByPositionTest() &#123;</div><div class="line">       TrapEntity entity = new TrapEntity();</div><div class="line">       entity.setId(1);</div><div class="line">       entity.setAlarmName(&quot;alarm1&quot;);</div><div class="line">       Long pos = UnSafeUtils.getObjectPos(entity);</div><div class="line">       System.out.println(&quot;getObjectPos = &quot; + pos);</div><div class="line"></div><div class="line">       try &#123;</div><div class="line">           long idOffSet = UNSAFE.objectFieldOffset(entity.getClass().getDeclaredField(&quot;id&quot;));</div><div class="line">           long idPos = pos + idOffSet;</div><div class="line">           System.out.println(&quot;old value = &quot; + UNSAFE.getInt(idPos));</div><div class="line"></div><div class="line">           UNSAFE.putInt(idPos, 2);</div><div class="line">           System.out.println(&quot;new value = &quot; + entity.getId());</div><div class="line"></div><div class="line">       &#125; catch (NoSuchFieldException e) &#123;</div><div class="line">           e.printStackTrace();</div><div class="line">       &#125;</div><div class="line">   &#125;</div></pre></td></tr></table></figure>
+<h2 id="计算对象大小"><a href="#计算对象大小" class="headerlink" title="计算对象大小"></a>计算对象大小</h2><table>
+<thead>
+<tr>
+<th>数据类型</th>
+<th>所占空间（byte）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>byte</td>
+<td>1</td>
+</tr>
+<tr>
+<td>short</td>
+<td>2</td>
+</tr>
+<tr>
+<td>int</td>
+<td>4</td>
+</tr>
+<tr>
+<td>long</td>
+<td>8</td>
+</tr>
+<tr>
+<td>float</td>
+<td>4</td>
+</tr>
+<tr>
+<td>double</td>
+<td>8</td>
+</tr>
+<tr>
+<td>char</td>
+<td>2</td>
+</tr>
+<tr>
+<td>boolean</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Object</td>
+<td>对象引用4/8</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>对象类型</th>
+<th>内存布局构成</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>一般非数组对象</td>
+<td>8个字节对象头(mark) + 4/8字节对象指针 + 数据区 + padding内存对齐(按照8的倍数对齐)</td>
+</tr>
+<tr>
+<td>数组对象</td>
+<td>8个字节对象头(mark) + 4/8字节对象指针 + 4字节数组长度 + 数据区 + padding内存对齐(按照8的倍数对齐)</td>
+</tr>
+</tbody>
+</table>
+<p>对象指针究竟是4字节还是8字节要看是否开启指针压缩。Oracle JDK从6 update 23开始在64位系统上会默认开启压缩指针，基础数据包装类及对象引用会变为4字节。</p>
+<p>计算原理：获得所有Field（包括父类Field）的偏移量，取最大偏移量对应的属性最大4（开启压缩）/8字节，object对象大小是8的倍数，不足时做对齐填充，所以对象大小为：(maxOffSet/8+1)*8</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line">public class ObjectA &#123;</div><div class="line">    String str;   // 4</div><div class="line">    int int1;       // 4</div><div class="line">    Integer Int2;</div><div class="line">    byte byte1;      // 1</div><div class="line">    Byte Byte2;</div><div class="line">    char char1; //2</div><div class="line">    Character Char2;</div><div class="line">    boolean boolean1;//1</div><div class="line">    Boolean BooLean2;</div><div class="line">    long long1;//4</div><div class="line">    Long Long2;</div><div class="line">    float float1;//4</div><div class="line">    Float Float2;</div><div class="line">    double double1;//</div><div class="line">    Double Double2;</div><div class="line">    ObjectB obj;  //4</div><div class="line">    int[] intArray;</div><div class="line">    volatile ObjectB[] objs;</div><div class="line">    volatile ObjectB[] objs2;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">public class ObjectB &#123;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div></pre></td><td class="code"><pre><div class="line">  //**获得对象大小</div><div class="line">    public static long sizeOf(Object obj) &#123;</div><div class="line">        Class clazz = obj.getClass();</div><div class="line">        //为了观察每个field大小，对field的offSet进行了排序，后者-前者=前者大小</div><div class="line">        TreeSet&lt;Field&gt; hashSet = new TreeSet(new Comparator() &#123;</div><div class="line">            @Override</div><div class="line">            public int compare(Object o1, Object o2) &#123;</div><div class="line">                Field f1=(Field)o1;</div><div class="line">                Field f2=(Field)o2;</div><div class="line">                long offSet1 = UNSAFE.objectFieldOffset(f1);</div><div class="line">                long offSet2 = UNSAFE.objectFieldOffset(f2);</div><div class="line">                return Integer.parseInt((offSet1 - offSet2)+&quot;&quot;);</div><div class="line">            &#125;</div><div class="line">        &#125;);</div><div class="line"></div><div class="line">        while (clazz != Object.class) &#123;</div><div class="line">            Field[] fields = clazz.getDeclaredFields();</div><div class="line">            for (Field field : fields) &#123;</div><div class="line">                if (!Modifier.isStatic(field.getModifiers())) &#123;</div><div class="line">                    hashSet.add(field);</div><div class="line">                &#125;</div><div class="line">            &#125;</div><div class="line">            clazz = clazz.getSuperclass();</div><div class="line">        &#125;</div><div class="line">        long maxOffSet=0;</div><div class="line">        for (Field field : hashSet) &#123;</div><div class="line">            long offSet = UNSAFE.objectFieldOffset(field);</div><div class="line">            System.out.println(field.getName() + &quot; offSet = &quot; + offSet);</div><div class="line">            if(offSet&gt;maxOffSet)&#123;</div><div class="line">                maxOffSet=offSet;</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        System.out.println(&quot;maxOffSet = &quot;+maxOffSet);</div><div class="line"></div><div class="line">        return (maxOffSet/8+1)*8;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>开启指针压缩结果：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line">int1 offSet = 12</div><div class="line">long1 offSet = 16</div><div class="line">double1 offSet = 24</div><div class="line">float1 offSet = 32</div><div class="line">char1 offSet = 36</div><div class="line">byte1 offSet = 38</div><div class="line">boolean1 offSet = 39</div><div class="line">str offSet = 40</div><div class="line">Int2 offSet = 44</div><div class="line">Byte2 offSet = 48</div><div class="line">Char2 offSet = 52</div><div class="line">BooLean2 offSet = 56</div><div class="line">Long2 offSet = 60</div><div class="line">Float2 offSet = 64</div><div class="line">Double2 offSet = 68</div><div class="line">obj offSet = 72</div><div class="line">intArray offSet = 76</div><div class="line">objs offSet = 80</div><div class="line">objs2 offSet = 84</div><div class="line">maxOffSet = 84</div><div class="line">88</div></pre></td></tr></table></figure>
+<p>未开启指针压缩结果：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line">long1 offSet = 16</div><div class="line">double1 offSet = 24</div><div class="line">int1 offSet = 32</div><div class="line">float1 offSet = 36</div><div class="line">char1 offSet = 40</div><div class="line">byte1 offSet = 42</div><div class="line">boolean1 offSet = 43</div><div class="line">str offSet = 48</div><div class="line">Int2 offSet = 56</div><div class="line">Byte2 offSet = 64</div><div class="line">Char2 offSet = 72</div><div class="line">BooLean2 offSet = 80</div><div class="line">Long2 offSet = 88</div><div class="line">Float2 offSet = 96</div><div class="line">Double2 offSet = 104</div><div class="line">obj offSet = 112</div><div class="line">intArray offSet = 120</div><div class="line">objs offSet = 128</div><div class="line">objs2 offSet = 136</div><div class="line">maxOffSet = 136</div><div class="line">144</div></pre></td></tr></table></figure>
+<p>根据打印的结果可知：</p>
+<p>开启了指针压缩，基础数据包装类及对象引用被压缩为4字节，最小属性起始为为12=8个字节对象头(mark) + 4字节对象指针，属性实际数据应该是在13，所以根据maxOffSet=84得出对象实际大小范围在maxOffSet+1=85到maxOffSet+4=88之间，padding后size=88，与公式(maxOffSet/8+1)*8计算一致</p>
+<p>未开启了指针压缩，基础数据包装类及对象引用为8字节，最小属性起始为为16=8个字节对象头(mark) + 8字节对象指针，属性实际数据应该是在17，所以根据maxOffSet=136得出对象大小范围在maxOffSet+1=137到maxOffSet+8=144之间，padding后size=155，与公式(maxOffSet/8+1)*8计算一致</p>
+<h2 id="浅拷贝"><a href="#浅拷贝" class="headerlink" title="浅拷贝"></a>浅拷贝</h2><p>通过复制内存数据的方式实现浅拷贝。</p>
+<p>浅拷贝：只复制值对象，不复制引用对象，引用对象指向同一对象</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line">public static void shallowCopyTest() &#123;</div><div class="line">        ObjectA objectA=new ObjectA();</div><div class="line">        objectA.setStr(&quot;I&apos;m ObjectA&quot;);</div><div class="line">        objectA.setInt1(1);</div><div class="line">        long size = sizeOf(objectA);//获得对象大小</div><div class="line">        long start = getObjectPos(objectA);//获得obj起始内存地址</div><div class="line">        System.out.println(&quot;getObjectPos = &quot;+start);</div><div class="line">        long address = UNSAFE.allocateMemory(size);//分配size大小的内存空间，返回内存起始地址</div><div class="line">        System.out.println(&quot;allocateMemory address = &quot;+address);</div><div class="line">        UNSAFE.copyMemory(start, address, size); //从start位copy size个大小的内存内容到目标地址address</div><div class="line">        ObjectA ObjectACopy= (ObjectA) createObjByPointer(address);</div><div class="line">        ObjectACopy.setInt1(11);</div><div class="line">        //浅复制只能修改基本数据类型，修改对象引用运行会报error</div><div class="line">//        ObjectACopy.setStr(&quot;I&apos;m ObjectA Copy&quot;);//A fatal error has been detected by the Java Runtime Environment</div><div class="line">        System.out.println(objectA.getInt1());</div><div class="line">        System.out.println(ObjectACopy.getInt1());</div><div class="line">        UNSAFE.freeMemory(address);</div><div class="line">    &#125;</div></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">public static Object shallowCopy(Object obj) &#123;</div><div class="line">       long size = sizeOf(obj);//获得对象大小</div><div class="line">       long start = getObjectPos(obj);//获得obj起始内存地址</div><div class="line">       long address = UNSAFE.allocateMemory(size);//分配size大小的内存空间，返回内存起始地址</div><div class="line">       UNSAFE.copyMemory(start, address, size); //从start位copy size个大小的内存内容到目标地址address</div><div class="line">       return createObjByPointer(address);</div><div class="line">   &#125;</div></pre></td></tr></table></figure>
+<h3 id="获取对象内存地址"><a href="#获取对象内存地址" class="headerlink" title="获取对象内存地址"></a>获取对象内存地址</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">//获得对象内存位置</div><div class="line">public static Long getObjectPos(Object obj) &#123;</div><div class="line">        Object[] array = new Object[]&#123;obj&#125;;</div><div class="line">        return UNSAFE.getLong(array, Long.valueOf(UNSAFE.ARRAY_OBJECT_BASE_OFFSET));//获得baseOffset位置内存地址</div><div class="line">    &#125;</div></pre></td></tr></table></figure>
+<h3 id="创建对象：指定内存地址的方式"><a href="#创建对象：指定内存地址的方式" class="headerlink" title="创建对象：指定内存地址的方式"></a>创建对象：指定内存地址的方式</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">//通过制定内存指针位置的方式创建对象</div><div class="line">public static Object createObjByPointer(long address) &#123;</div><div class="line">        Object[] array = new Object[] &#123;null&#125;;</div><div class="line">        long baseOffset = UNSAFE.arrayBaseOffset(Object[].class);</div><div class="line">        UNSAFE.putLong(array, baseOffset, address);//baseOffset指向address</div><div class="line">        return array[0];</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="动态加载类defineClass"><a href="#动态加载类defineClass" class="headerlink" title="动态加载类defineClass"></a>动态加载类defineClass</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line">    private static void defineClassTest() &#123;</div><div class="line">        byte[] classContents = new byte[0];</div><div class="line">        try &#123;</div><div class="line">            classContents = getClassContent();</div><div class="line">            Class c = UNSAFE.defineClass(null, classContents, 0, classContents.length,null,null);</div><div class="line">            Method m=c.getMethod(&quot;getId&quot;);</div><div class="line">            Object res =m.invoke(c.newInstance(),null);</div><div class="line">            System.out.println(res);</div><div class="line">        &#125; catch (Exception e) &#123;</div><div class="line">            e.printStackTrace();</div><div class="line">        &#125;</div><div class="line">&#125;</div><div class="line">    //getClassContent()方法，将一个class文件，读取到一个byte数组。</div><div class="line">    private static byte[] getClassContent() throws Exception &#123;</div><div class="line">        File f = new File(&quot;E:\\GAE\\rocky\\rocky-disruptor\\target\\classes\\rocky\\com\\pojo\\TrapEntity.class&quot;);</div><div class="line">        FileInputStream input = new FileInputStream(f);</div><div class="line">        byte[] content = new byte[(int)f.length()];</div><div class="line">        input.read(content);</div><div class="line">        input.close();</div><div class="line">        return content;</div><div class="line">    &#125;</div></pre></td></tr></table></figure>
+<h2 id="包装受检异常为运行时异常-不建议使用"><a href="#包装受检异常为运行时异常-不建议使用" class="headerlink" title="包装受检异常为运行时异常(不建议使用)"></a>包装受检异常为运行时异常(不建议使用)</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">getUnsafe().throwException(new IOException());</div></pre></td></tr></table></figure>
+<h2 id="堆外分配内存"><a href="#堆外分配内存" class="headerlink" title="堆外分配内存"></a>堆外分配内存</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">address = getUnsafe().allocateMemory(size);</div></pre></td></tr></table></figure>
+<h2 id="无锁并发CAS"><a href="#无锁并发CAS" class="headerlink" title="无锁并发CAS"></a>无锁并发CAS</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line">public class CASCounter &#123;</div><div class="line">    private volatile long counter = 0;</div><div class="line">    private Unsafe unsafe= UnSafeUtils.getUnsafe();</div><div class="line">    private long offset;</div><div class="line"></div><div class="line">    public CASCounter() throws Exception &#123;</div><div class="line">        offset = unsafe.objectFieldOffset(CASCounter.class.getDeclaredField(&quot;counter&quot;));</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public void increment() &#123;</div><div class="line">        long before = counter;</div><div class="line">        while (!unsafe.compareAndSwapLong(this, offset, before, before + 1)) &#123;</div><div class="line">            before = counter;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public long getCounter() &#123;</div><div class="line">        return counter;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h1 id="测试代码"><a href="#测试代码" class="headerlink" title="测试代码"></a>测试代码</h1><h2 id="UnSafeUtils"><a href="#UnSafeUtils" class="headerlink" title="UnSafeUtils"></a>UnSafeUtils</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div></pre></td><td class="code"><pre><div class="line">package rocky.com.util;</div><div class="line"></div><div class="line">import sun.misc.Unsafe;</div><div class="line"></div><div class="line">import java.lang.reflect.Field;</div><div class="line">import java.lang.reflect.Modifier;</div><div class="line">import java.security.AccessController;</div><div class="line">import java.security.PrivilegedExceptionAction;</div><div class="line">import java.util.Comparator;</div><div class="line">import java.util.TreeSet;</div><div class="line"></div><div class="line">public class UnSafeUtils &#123;</div><div class="line">    private static final Unsafe UNSAFE;</div><div class="line">    static &#123;</div><div class="line">        try &#123;</div><div class="line">            PrivilegedExceptionAction e = new PrivilegedExceptionAction() &#123;</div><div class="line">                public Unsafe run() throws Exception &#123;</div><div class="line">                    Field theUnsafe = Unsafe.class.getDeclaredField(&quot;theUnsafe&quot;);</div><div class="line">                    theUnsafe.setAccessible(true);</div><div class="line">                    return (Unsafe)theUnsafe.get((Object)null);</div><div class="line">                &#125;</div><div class="line">            &#125;;</div><div class="line">            UNSAFE = (Unsafe) AccessController.doPrivileged(e);</div><div class="line">        &#125; catch (Exception var1) &#123;</div><div class="line">            throw new RuntimeException(&quot;Unable to load unsafe&quot;, var1);</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public static Unsafe getUnsafe() &#123;</div><div class="line">        return UNSAFE;</div><div class="line">    &#125;</div><div class="line"></div><div class="line"></div><div class="line">    //**获得对象大小</div><div class="line">    public static long sizeOf(Object obj) &#123;</div><div class="line">        Class clazz = obj.getClass();</div><div class="line">        //为了观察每个field大小，对field的offSet进行了排序，后者-前者=前者大小</div><div class="line">        TreeSet&lt;Field&gt; hashSet = new TreeSet(new Comparator() &#123;</div><div class="line">            @Override</div><div class="line">            public int compare(Object o1, Object o2) &#123;</div><div class="line">                Field f1=(Field)o1;</div><div class="line">                Field f2=(Field)o2;</div><div class="line">                long offSet1 = UNSAFE.objectFieldOffset(f1);</div><div class="line">                long offSet2 = UNSAFE.objectFieldOffset(f2);</div><div class="line">                return Integer.parseInt((offSet1 - offSet2)+&quot;&quot;);</div><div class="line">            &#125;</div><div class="line">        &#125;);</div><div class="line"></div><div class="line">        while (clazz != Object.class) &#123;</div><div class="line">            Field[] fields = clazz.getDeclaredFields();</div><div class="line">            for (Field field : fields) &#123;</div><div class="line">                if (!Modifier.isStatic(field.getModifiers())) &#123;</div><div class="line">                    hashSet.add(field);</div><div class="line">                &#125;</div><div class="line">            &#125;</div><div class="line">            clazz = clazz.getSuperclass();</div><div class="line">        &#125;</div><div class="line">        long maxOffSet=0;</div><div class="line">        for (Field field : hashSet) &#123;</div><div class="line">            long offSet = UNSAFE.objectFieldOffset(field);</div><div class="line">            System.out.println(field.getName() + &quot; offSet = &quot; + offSet);</div><div class="line">            if(offSet&gt;maxOffSet)&#123;</div><div class="line">                maxOffSet=offSet;</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        System.out.println(&quot;maxOffSet = &quot;+maxOffSet);</div><div class="line"></div><div class="line">        return (maxOffSet/8+1)*8;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    //浅拷贝</div><div class="line">    public static Object shallowCopy(Object obj) &#123;</div><div class="line">        long size = sizeOf(obj);//获得对象大小</div><div class="line">        long start = getObjectPos(obj);//获得obj起始内存地址</div><div class="line">        long address = UNSAFE.allocateMemory(size);//分配size大小的内存空间，返回内存起始地址</div><div class="line">        UNSAFE.copyMemory(start, address, size); //从start位copy size个大小的内存内容到目标地址address</div><div class="line">        return createObjByPointer(address);</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    //获得对象内存位置</div><div class="line">    public static Long getObjectPos(Object obj) &#123;</div><div class="line">        Object[] array = new Object[]&#123;obj&#125;;</div><div class="line">        return UNSAFE.getLong(array, Long.valueOf(UNSAFE.ARRAY_OBJECT_BASE_OFFSET));//获得baseOffset位置内存地址</div><div class="line">    &#125;</div><div class="line">    //通过制定内存指针位置的方式创建对象</div><div class="line">    public static Object createObjByPointer(long address) &#123;</div><div class="line">        Object[] array = new Object[] &#123;null&#125;;</div><div class="line">        long baseOffset = UNSAFE.arrayBaseOffset(Object[].class);</div><div class="line">        UNSAFE.putLong(array, baseOffset, address);//baseOffset指向address</div><div class="line">        return array[0];</div><div class="line">    &#125;</div><div class="line"></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="POJO"><a href="#POJO" class="headerlink" title="POJO"></a>POJO</h2><h3 id="TrapEntity"><a href="#TrapEntity" class="headerlink" title="TrapEntity"></a>TrapEntity</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line">public class TrapEntity &#123;</div><div class="line">    int id;</div><div class="line">    String alarmName;</div><div class="line"></div><div class="line">    public int getId() &#123;</div><div class="line">        return id;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public void setId(int id) &#123;</div><div class="line">        this.id = id;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public String getAlarmName() &#123;</div><div class="line">        return alarmName;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public void setAlarmName(String alarmName) &#123;</div><div class="line">        this.alarmName = alarmName;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="ObjectA"><a href="#ObjectA" class="headerlink" title="ObjectA"></a>ObjectA</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div></pre></td><td class="code"><pre><div class="line">public class ObjectA &#123;</div><div class="line">    String str;   // 4</div><div class="line">    int int1;       // 4</div><div class="line">    Integer Int2;</div><div class="line">    byte byte1;      // 1</div><div class="line">    Byte Byte2;</div><div class="line">    char char1; //2</div><div class="line">    Character Char2;</div><div class="line">    boolean boolean1;//1</div><div class="line">    Boolean BooLean2;</div><div class="line">    long long1;//4</div><div class="line">    Long Long2;</div><div class="line">    float float1;//4</div><div class="line">    Float Float2;</div><div class="line">    double double1;//8</div><div class="line">    Double Double2;</div><div class="line">    ObjectB obj;  //4</div><div class="line">    int[] intArray;</div><div class="line">    volatile ObjectB[] objs;</div><div class="line">    volatile ObjectB[] objs2;</div><div class="line"></div><div class="line">//get/set 省略</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="ObjectB"><a href="#ObjectB" class="headerlink" title="ObjectB"></a>ObjectB</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">public class ObjectB &#123;</div><div class="line">	static int staticFile;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="UnSafeTest"><a href="#UnSafeTest" class="headerlink" title="UnSafeTest"></a>UnSafeTest</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div><div class="line">104</div><div class="line">105</div><div class="line">106</div><div class="line">107</div><div class="line">108</div><div class="line">109</div><div class="line">110</div><div class="line">111</div><div class="line">112</div><div class="line">113</div><div class="line">114</div><div class="line">115</div><div class="line">116</div><div class="line">117</div><div class="line">118</div><div class="line">119</div><div class="line">120</div><div class="line">121</div><div class="line">122</div><div class="line">123</div></pre></td><td class="code"><pre><div class="line">package rocky.com;</div><div class="line"></div><div class="line">import rocky.com.pojo.TrapEntity;</div><div class="line">import rocky.com.util.UnSafeUtils;</div><div class="line">import sun.misc.Unsafe;</div><div class="line"></div><div class="line"></div><div class="line">public class UnSafeTest &#123;</div><div class="line"></div><div class="line"></div><div class="line">    private static final Unsafe UNSAFE = UnSafeUtils.getUnsafe();</div><div class="line"></div><div class="line">    public static void main(String[] args) &#123;</div><div class="line">//        changeValueByOffSetTest();</div><div class="line">//        printConstant();</div><div class="line">//        changeValueByPositionTest();</div><div class="line">//       long size= UnSafeUtils.sizeOf(new ObjectA());</div><div class="line">//      System.out.println(size);</div><div class="line">//        shallowCopyTest();</div><div class="line">//objectStaticFieldTest();</div><div class="line">defineClassTest();</div><div class="line">        System.exit(0);</div><div class="line">    &#125;</div><div class="line">    private static void defineClassTest() &#123;</div><div class="line"></div><div class="line">        byte[] classContents = new byte[0];</div><div class="line">        try &#123;</div><div class="line">            classContents = getClassContent();</div><div class="line">            Class c = UNSAFE.defineClass(null, classContents, 0, classContents.length,null,null);</div><div class="line">            Method m=c.getMethod(&quot;getId&quot;);</div><div class="line">            Object res =m.invoke(c.newInstance(),null);</div><div class="line">            System.out.println(res);</div><div class="line">        &#125; catch (Exception e) &#123;</div><div class="line">            e.printStackTrace();</div><div class="line">        &#125;</div><div class="line">&#125;</div><div class="line">    //getClassContent()方法，将一个class文件，读取到一个byte数组。</div><div class="line">    private static byte[] getClassContent() throws Exception &#123;</div><div class="line">        File f = new File(&quot;E:\\GAE\\rocky\\rocky-disruptor\\target\\classes\\rocky\\com\\pojo\\TrapEntity.class&quot;);</div><div class="line">        FileInputStream input = new FileInputStream(f);</div><div class="line">        byte[] content = new byte[(int)f.length()];</div><div class="line">        input.read(content);</div><div class="line">        input.close();</div><div class="line">        return content;</div><div class="line">    &#125;</div><div class="line">    </div><div class="line">    //测试staticFieldBase方法，返回Class对象</div><div class="line">private static void objectStaticFieldTest()&#123;</div><div class="line">    try &#123;</div><div class="line">        Class objB=   (Class) UNSAFE.staticFieldBase(ObjectB.class.getDeclaredField(&quot;staticFile&quot;));</div><div class="line">        System.out.println(objB.getName());</div><div class="line">    &#125; catch (NoSuchFieldException e) &#123;</div><div class="line">        e.printStackTrace();</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line">    //通过内存位置修改对象属性</div><div class="line">    private static void changeValueByPositionTest() &#123;</div><div class="line">        TrapEntity entity = new TrapEntity();</div><div class="line">        entity.setId(1);</div><div class="line">        entity.setAlarmName(&quot;alarm1&quot;);</div><div class="line">        Long pos = UnSafeUtils.getObjectPos(entity);</div><div class="line">        System.out.println(&quot;getObjectPos = &quot; + pos);</div><div class="line"></div><div class="line">        try &#123;</div><div class="line">            long idOffSet = UNSAFE.objectFieldOffset(entity.getClass().getDeclaredField(&quot;id&quot;));</div><div class="line">            long idPos = pos + idOffSet;</div><div class="line">            System.out.println(&quot;old value = &quot; + UNSAFE.getInt(idPos));</div><div class="line">//            System.out.println(&quot;byte = &quot;+b);</div><div class="line">            UNSAFE.putInt(idPos, 2);</div><div class="line">            System.out.println(&quot;new value = &quot; + entity.getId());</div><div class="line"></div><div class="line">        &#125; catch (NoSuchFieldException e) &#123;</div><div class="line">            e.printStackTrace();</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public static void printConstant() &#123;</div><div class="line">        System.out.println(&quot;ADDRESS_SIZE = &quot;+UNSAFE.ADDRESS_SIZE);</div><div class="line">        System.out.println(&quot;ARRAY_OBJECT_BASE_OFFSET = &quot;+UNSAFE.ARRAY_OBJECT_BASE_OFFSET);</div><div class="line">        System.out.println(&quot;ARRAY_OBJECT_INDEX_SCALE = &quot;+UNSAFE.ARRAY_OBJECT_INDEX_SCALE);</div><div class="line"></div><div class="line">    &#125;</div><div class="line">    public static void shallowCopyTest() &#123;</div><div class="line">        ObjectA objectA=new ObjectA();</div><div class="line">        objectA.setStr(&quot;I&apos;m ObjectA&quot;);</div><div class="line">        objectA.setInt1(1);</div><div class="line">        long size = UnSafeUtils.sizeOf(objectA);//获得对象大小</div><div class="line">        long start = UnSafeUtils.getObjectPos(objectA);//获得obj起始内存地址</div><div class="line">        System.out.println(&quot;getObjectPos = &quot;+start);</div><div class="line">        long address = UNSAFE.allocateMemory(size);//分配size大小的内存空间，返回内存起始地址</div><div class="line">        System.out.println(&quot;allocateMemory address = &quot;+address);</div><div class="line">        UNSAFE.copyMemory(start, address, size); //从start位copy size个大小的内存内容到目标地址address</div><div class="line">        ObjectA ObjectACopy= (ObjectA) UnSafeUtils.createObjByPointer(address);</div><div class="line">        ObjectACopy.setInt1(11);</div><div class="line">        //浅复制只能修改基本数据类型，修改对象引用运行会报error</div><div class="line">//        ObjectACopy.setStr(&quot;I&apos;m ObjectA Copy&quot;);//A fatal error has been detected by the Java Runtime Environment</div><div class="line">        System.out.println(objectA.getInt1());</div><div class="line">        System.out.println(ObjectACopy.getInt1());</div><div class="line">        UNSAFE.freeMemory(address);</div><div class="line">    &#125;</div><div class="line"></div><div class="line"></div><div class="line">    //通过offSet修改对象属性</div><div class="line">    private static void changeValueByOffSetTest() &#123;</div><div class="line">        TrapEntity entity = new TrapEntity();</div><div class="line">        entity.setId(1);</div><div class="line">        entity.setAlarmName(&quot;alarm1&quot;);</div><div class="line">        try &#123;</div><div class="line">            long alarmNameOffSet = UNSAFE.objectFieldOffset(entity.getClass().getDeclaredField(&quot;alarmName&quot;));</div><div class="line">            long idOffSet = UNSAFE.objectFieldOffset(entity.getClass().getDeclaredField(&quot;id&quot;));</div><div class="line">            System.out.println(alarmNameOffSet);</div><div class="line">            UNSAFE.putObject(entity, alarmNameOffSet, &quot;alarmName2&quot;);</div><div class="line">            System.out.println(entity.getAlarmName());</div><div class="line">            System.out.println(idOffSet);</div><div class="line">            UNSAFE.putInt(entity, idOffSet, 2);</div><div class="line">            System.out.println(entity.getId());</div><div class="line"></div><div class="line">        &#125; catch (NoSuchFieldException e) &#123;</div><div class="line">            e.printStackTrace();</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="CASCounter"><a href="#CASCounter" class="headerlink" title="CASCounter"></a>CASCounter</h2><p>无锁并发测试</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div></pre></td><td class="code"><pre><div class="line">package rocky.com;</div><div class="line"></div><div class="line">import rocky.com.util.UnSafeUtils;</div><div class="line">import sun.misc.Unsafe;</div><div class="line"></div><div class="line">public class CASCounter &#123;</div><div class="line">    private volatile long counter = 0;</div><div class="line">    private Unsafe unsafe= UnSafeUtils.getUnsafe();</div><div class="line">    private long offset;</div><div class="line"></div><div class="line">    public CASCounter() throws Exception &#123;</div><div class="line">        offset = unsafe.objectFieldOffset(CASCounter.class.getDeclaredField(&quot;counter&quot;));</div><div class="line">    &#125;</div><div class="line"></div><div class="line"></div><div class="line">    public void increment() &#123;</div><div class="line">        long before = counter;</div><div class="line">        while (!unsafe.compareAndSwapLong(this, offset, before, before + 1)) &#123;</div><div class="line">            before = counter;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public long getCounter() &#123;</div><div class="line">        return counter;</div><div class="line">    &#125;</div><div class="line"></div><div class="line">    public static void main(String[] args) &#123;</div><div class="line">        try &#123;</div><div class="line">            CASCounter casCounter=new CASCounter();</div><div class="line">            Producer producer=new Producer(casCounter);</div><div class="line">            for (int i = 0; i &lt; 5; i++) &#123;</div><div class="line">                new Thread(producer).start();</div><div class="line">            &#125;</div><div class="line"></div><div class="line">        &#125; catch (Exception e) &#123;</div><div class="line">            e.printStackTrace();</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div><div class="line">class Producer implements Runnable&#123;</div><div class="line">    CASCounter casCounter;</div><div class="line">    public Producer(CASCounter counter)&#123;</div><div class="line">        casCounter=counter;</div><div class="line">    &#125;</div><div class="line">    @Override</div><div class="line">    public void run() &#123;</div><div class="line">        while (true)&#123;</div><div class="line">            casCounter.increment();</div><div class="line">            System.out.println(Thread.currentThread().getName()+&quot; increment&quot;);</div><div class="line">            System.out.println(Thread.currentThread().getName()+&quot; casCounter = &quot;+casCounter.getCounter());</div><div class="line">            try &#123;</div><div class="line">                Thread.sleep(500);</div><div class="line">            &#125; catch (InterruptedException e) &#123;</div><div class="line">                e.printStackTrace();</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="http://oulmk4pq1.bkt.clouddn.com/rockynote.png" alt="老祁 wechat" style="width: 200px; max-width: 100%;"/>
+    <div>扫一扫，用手机访问本站</div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div></div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="http://oulmk4pq1.bkt.clouddn.com/wechat_in.png" alt="老祁 WeChat Pay"/>
+        <p>微信打赏</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="http://oulmk4pq1.bkt.clouddn.com/alipay_in.png" alt="老祁 Alipay"/>
+        <p>支付宝打赏</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/java/" rel="tag"># java</a>
+          
+            <a href="/tags/Unsafe/" rel="tag"># Unsafe</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/02/07/Disruptor/" rel="next" title="Disruptor源码解析">
+                <i class="fa fa-chevron-left"></i> Disruptor源码解析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/02/08/Quartz/" rel="prev" title="Quartz">
+                Quartz <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+<span class="jiathis_txt">分享到：</span>
+<a class="jiathis_button_fav">收藏夹</a>
+<a class="jiathis_button_copy">复制网址</a>
+<a class="jiathis_button_email">邮件</a>
+<a class="jiathis_button_weixin">微信</a>
+<a class="jiathis_button_qzone">QQ空间</a>
+<a class="jiathis_button_tqq">腾讯微薄</a>
+<a class="jiathis_button_douban">豆瓣</a>
+<a class="jiathis_button_share">一键分享</a>
+
+<a href="http://www.jiathis.com/share?uid=2140465" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+var jiathis_config={
+  data_track_clickback:true,
+  summary:"",
+  shortUrl:false,
+  hideMore:false
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=2141554" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="老祁" />
+          <p class="site-author-name" itemprop="name">老祁</p>
+           
+              <p class="site-description motion-element" itemprop="description">老祁的笔记</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">12</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">25</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/xingsheq" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/iterator" target="_blank" title="Weibo">
+                  
+                    <i class="fa fa-fw fa-weibo"></i>
+                  
+                    
+                      Weibo
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-link"></i>
+              友情链接
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://qijiaoshou.com" title="祁较瘦" target="_blank">祁较瘦</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Unsafe"><span class="nav-number">1.</span> <span class="nav-text">Unsafe</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#创建UnSafe实例"><span class="nav-number">1.1.</span> <span class="nav-text">创建UnSafe实例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#对象内存结构"><span class="nav-number">1.2.</span> <span class="nav-text">对象内存结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#内存位置"><span class="nav-number">1.3.</span> <span class="nav-text">内存位置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#内存分配-复制-释放"><span class="nav-number">1.4.</span> <span class="nav-text">内存分配/复制/释放</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#数组"><span class="nav-number">1.5.</span> <span class="nav-text">数组</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#对象Field"><span class="nav-number">1.6.</span> <span class="nav-text">对象Field</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#类"><span class="nav-number">1.7.</span> <span class="nav-text">类</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#异常"><span class="nav-number">1.8.</span> <span class="nav-text">异常</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#CAS"><span class="nav-number">1.9.</span> <span class="nav-text">CAS</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#get-putXXVolatile"><span class="nav-number">1.10.</span> <span class="nav-text">get/putXXVolatile</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#putOrderedObject-Int-Long"><span class="nav-number">1.11.</span> <span class="nav-text">putOrderedObject/Int/Long</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#线程park-unpark"><span class="nav-number">1.12.</span> <span class="nav-text">线程park/unpark</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#获取负载"><span class="nav-number">1.13.</span> <span class="nav-text">获取负载</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#getAndAddXX"><span class="nav-number">1.14.</span> <span class="nav-text">getAndAddXX</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#内存屏障"><span class="nav-number">1.15.</span> <span class="nav-text">内存屏障</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#使用案例"><span class="nav-number">2.</span> <span class="nav-text">使用案例</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#非常规的对象实例化"><span class="nav-number">2.1.</span> <span class="nav-text">非常规的对象实例化</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#修改对象属性"><span class="nav-number">2.2.</span> <span class="nav-text">修改对象属性</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#计算对象大小"><span class="nav-number">2.3.</span> <span class="nav-text">计算对象大小</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#浅拷贝"><span class="nav-number">2.4.</span> <span class="nav-text">浅拷贝</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#获取对象内存地址"><span class="nav-number">2.4.1.</span> <span class="nav-text">获取对象内存地址</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#创建对象：指定内存地址的方式"><span class="nav-number">2.4.2.</span> <span class="nav-text">创建对象：指定内存地址的方式</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#动态加载类defineClass"><span class="nav-number">2.5.</span> <span class="nav-text">动态加载类defineClass</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#包装受检异常为运行时异常-不建议使用"><span class="nav-number">2.6.</span> <span class="nav-text">包装受检异常为运行时异常(不建议使用)</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#堆外分配内存"><span class="nav-number">2.7.</span> <span class="nav-text">堆外分配内存</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#无锁并发CAS"><span class="nav-number">2.8.</span> <span class="nav-text">无锁并发CAS</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#测试代码"><span class="nav-number">3.</span> <span class="nav-text">测试代码</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#UnSafeUtils"><span class="nav-number">3.1.</span> <span class="nav-text">UnSafeUtils</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#POJO"><span class="nav-number">3.2.</span> <span class="nav-text">POJO</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#TrapEntity"><span class="nav-number">3.2.1.</span> <span class="nav-text">TrapEntity</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ObjectA"><span class="nav-number">3.2.2.</span> <span class="nav-text">ObjectA</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ObjectB"><span class="nav-number">3.2.3.</span> <span class="nav-text">ObjectB</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#UnSafeTest"><span class="nav-number">3.3.</span> <span class="nav-text">UnSafeTest</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#CASCounter"><span class="nav-number">3.4.</span> <span class="nav-text">CASCounter</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">老祁</span>
+
+  
+</div>
+
+
+  <div class="powered-by">
+    由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+  </div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">
+    主题 &mdash;
+    <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+      NexT.Pisces
+    </a>
+  </div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+  <script src="https://cdn1.lncld.net/static/js/av-core-mini-0.6.4.js"></script>
+  <script>AV.initialize("XI4CVU7uevOpiu2KjmNMjcd4-gzGzoHsz", "tkrUmr1nl8g9tydH1yf7LJiQ");</script>
+  <script>
+    function showTime(Counter) {
+      var query = new AV.Query(Counter);
+      var entries = [];
+      var $visitors = $(".leancloud_visitors");
+
+      $visitors.each(function () {
+        entries.push( $(this).attr("id").trim() );
+      });
+
+      query.containedIn('url', entries);
+      query.find()
+        .done(function (results) {
+          var COUNT_CONTAINER_REF = '.leancloud-visitors-count';
+
+          if (results.length === 0) {
+            $visitors.find(COUNT_CONTAINER_REF).text(0);
+            return;
+          }
+
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.get('url');
+            var time = item.get('time');
+            var element = document.getElementById(url);
+
+            $(element).find(COUNT_CONTAINER_REF).text(time);
+          }
+          for(var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = document.getElementById(url);
+            var countSpan = $(element).find(COUNT_CONTAINER_REF);
+            if( countSpan.text() == '') {
+              countSpan.text(0);
+            }
+          }
+        })
+        .fail(function (object, error) {
+          console.log("Error: " + error.code + " " + error.message);
+        });
+    }
+
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+      var query = new AV.Query(Counter);
+
+      query.equalTo("url", url);
+      query.find({
+        success: function(results) {
+          if (results.length > 0) {
+            var counter = results[0];
+            counter.fetchWhenSave(true);
+            counter.increment("time");
+            counter.save(null, {
+              success: function(counter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(counter.get('time'));
+              },
+              error: function(counter, error) {
+                console.log('Failed to save Visitor num, with error message: ' + error.message);
+              }
+            });
+          } else {
+            var newcounter = new Counter();
+            /* Set ACL */
+            var acl = new AV.ACL();
+            acl.setPublicReadAccess(true);
+            acl.setPublicWriteAccess(true);
+            newcounter.setACL(acl);
+            /* End Set ACL */
+            newcounter.set("title", title);
+            newcounter.set("url", url);
+            newcounter.set("time", 1);
+            newcounter.save(null, {
+              success: function(newcounter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(newcounter.get('time'));
+              },
+              error: function(newcounter, error) {
+                console.log('Failed to create');
+              }
+            });
+          }
+        },
+        error: function(error) {
+          console.log('Error:' + error.code + " " + error.message);
+        }
+      });
+    }
+
+    $(function() {
+      var Counter = AV.Object.extend("Counter");
+      if ($('.leancloud_visitors').length == 1) {
+        addCount(Counter);
+      } else if ($('.post-title-link').length > 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

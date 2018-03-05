@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="hexo optimize,hexo优化," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="CSS优化css修改原则：尽量不修改原css代码，而是写在custom.styl，主要修改的custom.styl文件有：  全局css文件：\themes\next\source\css_custom\custom.styl 定义变量的css文件：\themes\next\source\css_variables\custom.styl  修改网站标题栏背景颜色在next/source/css/">
+<meta name="keywords" content="hexo optimize,hexo优化">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Optimizing Hexo with Next Theme">
+<meta property="og:url" content="http://rockynote.com/2017/08/22/Optimizing-Hexo-with-Next-Theme/index.html">
+<meta property="og:site_name" content="老祁笔记">
+<meta property="og:description" content="CSS优化css修改原则：尽量不修改原css代码，而是写在custom.styl，主要修改的custom.styl文件有：  全局css文件：\themes\next\source\css_custom\custom.styl 定义变量的css文件：\themes\next\source\css_variables\custom.styl  修改网站标题栏背景颜色在next/source/css/">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://oulmk4pq1.bkt.clouddn.com/logo.png">
+<meta property="og:image" content="http://oulmk4pq1.bkt.clouddn.com/socialLink.png">
+<meta property="og:image" content="http://oulmk4pq1.bkt.clouddn.com/donate_modify.png">
+<meta property="og:updated_time" content="2018-03-05T07:15:08.232Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Optimizing Hexo with Next Theme">
+<meta name="twitter:description" content="CSS优化css修改原则：尽量不修改原css代码，而是写在custom.styl，主要修改的custom.styl文件有：  全局css文件：\themes\next\source\css_custom\custom.styl 定义变量的css文件：\themes\next\source\css_variables\custom.styl  修改网站标题栏背景颜色在next/source/css/">
+<meta name="twitter:image" content="http://oulmk4pq1.bkt.clouddn.com/logo.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://rockynote.com/2017/08/22/Optimizing-Hexo-with-Next-Theme/"/>
+
+
+
+
+
+  <title>Optimizing Hexo with Next Theme | 老祁笔记</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-105730821-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">老祁笔记</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Rocky's notes</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://rockynote.com/2017/08/22/Optimizing-Hexo-with-Next-Theme/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="老祁">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="老祁笔记">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Optimizing Hexo with Next Theme</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-08-22T13:30:28+00:00">
+                2017-08-22
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Hexo/" itemprop="url" rel="index">
+                    <span itemprop="name">Hexo</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+             <span id="/2017/08/22/Optimizing-Hexo-with-Next-Theme/" class="leancloud_visitors" data-flag-title="Optimizing Hexo with Next Theme">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数&#58;</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="CSS优化"><a href="#CSS优化" class="headerlink" title="CSS优化"></a>CSS优化</h2><p>css修改原则：尽量不修改原css代码，而是写在custom.styl，主要修改的custom.styl文件有：</p>
+<ul>
+<li>全局css文件：\themes\next\source\css_custom\custom.styl</li>
+<li>定义变量的css文件：\themes\next\source\css_variables\custom.styl</li>
+</ul>
+<h3 id="修改网站标题栏背景颜色"><a href="#修改网站标题栏背景颜色" class="headerlink" title="修改网站标题栏背景颜色"></a>修改网站标题栏背景颜色</h3><p>在next/source/css/_custom目录下面专门提供了custom.styl供我们自定义样式的</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">.site-meta &#123;</div><div class="line">  background: $blue; //修改为自己喜欢的颜色</div><div class="line"> &#125;</div></pre></td></tr></table></figure>
+<p>显示效果：</p>
+<p><img src="http://oulmk4pq1.bkt.clouddn.com/logo.png" alt="显示效果"></p>
+<a id="more"></a>
+<h3 id="侧栏社交链接设置居中显示"><a href="#侧栏社交链接设置居中显示" class="headerlink" title="侧栏社交链接设置居中显示"></a>侧栏社交链接设置居中显示</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">.links-of-author-item &#123;</div><div class="line">  text-align: center;</div><div class="line">  &#125;</div></pre></td></tr></table></figure>
+<p>显示效果：</p>
+<p><img src="http://oulmk4pq1.bkt.clouddn.com/socialLink.png" alt=""></p>
+<h3 id="友情链接居左"><a href="#友情链接居左" class="headerlink" title="友情链接居左"></a>友情链接居左</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">.links-of-blogroll-title &#123;</div><div class="line">  text-align: left;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="修改文章内链接文本样式"><a href="#修改文章内链接文本样式" class="headerlink" title="修改文章内链接文本样式"></a>修改文章内链接文本样式</h3><p>将链接文本设置为蓝色，鼠标划过时文字颜色加深，并显示下划线</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">.post-body p a&#123;</div><div class="line">  color: #0593d3;</div><div class="line">  border-bottom: none;</div><div class="line">  &amp;:hover &#123;</div><div class="line">    color: #0477ab;</div><div class="line">    text-decoration: underline;</div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="修改友情链接样式"><a href="#修改友情链接样式" class="headerlink" title="修改友情链接样式"></a>修改友情链接样式</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">.links-of-blogroll-item a&#123;</div><div class="line">  color: #0593d3;</div><div class="line">  border-bottom: none;</div><div class="line">  &amp;:hover &#123;</div><div class="line">    color: #0477ab;</div><div class="line">    text-decoration: underline;</div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="修改上一篇，下一篇链接文本样式"><a href="#修改上一篇，下一篇链接文本样式" class="headerlink" title="修改上一篇，下一篇链接文本样式"></a>修改上一篇，下一篇链接文本样式</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">.post-nav-item a&#123;</div><div class="line">  color: #0593d3;</div><div class="line">  border-bottom: none;</div><div class="line">  &amp;:hover &#123;</div><div class="line">    color: #0477ab;</div><div class="line">    text-decoration: underline;</div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="修改标签云样式"><a href="#修改标签云样式" class="headerlink" title="修改标签云样式"></a>修改标签云样式</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">.tag-cloud &#123;</div><div class="line">  text-align: center;</div><div class="line">  a &#123;</div><div class="line">    display: inline-block;</div><div class="line">    margin: 15px;</div><div class="line">//	border-bottom: none;</div><div class="line">	&amp;:hover &#123;</div><div class="line">    color: #000;</div><div class="line">	font-weight: bold;</div><div class="line">    border-bottom: 2px solid #000;&#125;</div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="修改字体大小"><a href="#修改字体大小" class="headerlink" title="修改字体大小"></a>修改字体大小</h3><p>修改：themes\next\source\css_variables\custom.styl</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">$font-family-headings = Monda, &quot;PingFang SC&quot;, &quot;Microsoft YaHei&quot;, sans-serif//标题字体族，修改成你期望的字体族</div><div class="line">$font-size-headings-base = 28px //是各级标题大小</div><div class="line">$font-size-headings-step  = 2px</div><div class="line"> </div><div class="line">$font-family-base = Monda, &quot;PingFang SC&quot;, &quot;Microsoft YaHei&quot;, sans-serif //正文字体族，修改成你期望的字体族</div><div class="line">$font-size-base = 16px // 正文字体的大小</div><div class="line"></div><div class="line">$code-font-family = &quot;Input Mono&quot;, &quot;PT Mono&quot;, Consolas, Monaco, Menlo, monospace // 代码字体</div><div class="line">$code-font-size = 14px // 代码字体的大小</div></pre></td></tr></table></figure>
+<h3 id="调整页面宽度，减少左右侧留白"><a href="#调整页面宽度，减少左右侧留白" class="headerlink" title="调整页面宽度，减少左右侧留白"></a>调整页面宽度，减少左右侧留白</h3><ul>
+<li>在Mist和Muse风格可以用下面的方法</li>
+</ul>
+<p>修改成你期望的宽度</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$content-desktop = 700px</div></pre></td></tr></table></figure>
+<p>当视窗超过 1600px 后的宽度</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$content-desktop-large = 900px</div></pre></td></tr></table></figure>
+<ul>
+<li>Pisces风格时可以用下面的方法</li>
+</ul>
+<ol>
+<li>修改修改：themes/next/source/css/_variables/custom.styl</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">$main-desktop = 80% //可设置其他值</div></pre></td></tr></table></figure>
+<ol>
+<li>修改themes/next/source/css/_schemes/Pisces/_layout.styl找到.content-wrap，修改为如下内容</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">.content-wrap &#123; width: calc(100% - 260px); &#125;</div></pre></td></tr></table></figure>
+<p>注意：网上其他方式，在custom.styl或者_layout.styl直接添加内容，移动端会错位</p>
+<h3 id="头像旋转"><a href="#头像旋转" class="headerlink" title="头像旋转"></a>头像旋转</h3><p>在next/source/css/_custom/custom.styl添加</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div></pre></td><td class="code"><pre><div class="line">.site-author-image &#123;</div><div class="line">  display: block;</div><div class="line">  margin: 0 auto;</div><div class="line">  padding: $site-author-image-padding;</div><div class="line">  max-width: $site-author-image-width;</div><div class="line">  height: $site-author-image-height;</div><div class="line">  border: $site-author-image-border-width solid $site-author-image-border-color;</div><div class="line"></div><div class="line">  /* 头像圆形 */</div><div class="line">  border-radius: 80px;</div><div class="line">  -webkit-border-radius: 80px;</div><div class="line">  -moz-border-radius: 80px;</div><div class="line">  box-shadow: inset 0 -1px 0 #333sf;</div><div class="line"></div><div class="line">  /* 设置循环动画 [animation: (play)动画名称 (2s)动画播放时长单位秒或微秒 (ase-out)动画播放的速度曲线为以低速结束 </div><div class="line">    (1s)等待1秒然后开始动画 (1)动画播放次数(infinite为循环播放) ]*/</div><div class="line"></div><div class="line"></div><div class="line">  /* 鼠标经过头像旋转360度 */</div><div class="line">  -webkit-transition: -webkit-transform 1.0s ease-out;</div><div class="line">  -moz-transition: -moz-transform 1.0s ease-out;</div><div class="line">  transition: transform 1.0s ease-out;</div><div class="line">&#125;</div><div class="line"></div><div class="line">img:hover &#123;</div><div class="line">  /* 鼠标经过停止头像旋转 </div><div class="line">  -webkit-animation-play-state:paused;</div><div class="line">  animation-play-state:paused;*/</div><div class="line"></div><div class="line">  /* 鼠标经过头像旋转360度 */</div><div class="line">  -webkit-transform: rotateZ(360deg);</div><div class="line">  -moz-transform: rotateZ(360deg);</div><div class="line">  transform: rotateZ(360deg);</div><div class="line">&#125;</div><div class="line"></div><div class="line">/* Z 轴旋转动画 */</div><div class="line">@-webkit-keyframes play &#123;</div><div class="line">  0% &#123;</div><div class="line">    -webkit-transform: rotateZ(0deg);</div><div class="line">  &#125;</div><div class="line">  100% &#123;</div><div class="line">    -webkit-transform: rotateZ(-360deg);</div><div class="line">  &#125;</div><div class="line">&#125;</div><div class="line">@-moz-keyframes play &#123;</div><div class="line">  0% &#123;</div><div class="line">    -moz-transform: rotateZ(0deg);</div><div class="line">  &#125;</div><div class="line">  100% &#123;</div><div class="line">    -moz-transform: rotateZ(-360deg);</div><div class="line">  &#125;</div><div class="line">&#125;</div><div class="line">@keyframes play &#123;</div><div class="line">  0% &#123;</div><div class="line">    transform: rotateZ(0deg);</div><div class="line">  &#125;</div><div class="line">  100% &#123;</div><div class="line">    transform: rotateZ(-360deg);</div><div class="line">  &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h2 id="主题-config-yml配置"><a href="#主题-config-yml配置" class="headerlink" title="主题_config.yml配置"></a>主题_config.yml配置</h2><h3 id="修改主题样式"><a href="#修改主题样式" class="headerlink" title="修改主题样式"></a>修改主题样式</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">scheme: Pisces</div><div class="line">#scheme: Muse</div><div class="line">#scheme: Mist</div><div class="line">#scheme: Pisces</div><div class="line">#scheme: Gemini</div></pre></td></tr></table></figure>
+<h3 id="文章结尾显示微信二维码"><a href="#文章结尾显示微信二维码" class="headerlink" title="文章结尾显示微信二维码"></a>文章结尾显示微信二维码</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">wechat_subscriber:</div><div class="line">  enabled: true</div><div class="line">  qcode: http://oulmk4pq1.bkt.clouddn.com/rockynote.png</div><div class="line">  description: 扫一扫，用手机访问本站</div></pre></td></tr></table></figure>
+<h3 id="侧边栏显示友情链接"><a href="#侧边栏显示友情链接" class="headerlink" title="侧边栏显示友情链接"></a>侧边栏显示友情链接</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">links_title: 友情链接</div><div class="line">links_layout: inline</div><div class="line">links_icon: link  # 设置图标</div><div class="line">links:</div><div class="line">  祁较瘦: http://qijiaoshou.com</div></pre></td></tr></table></figure>
+<h3 id="侧边栏显示社交媒体链接"><a href="#侧边栏显示社交媒体链接" class="headerlink" title="侧边栏显示社交媒体链接"></a>侧边栏显示社交媒体链接</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">social:</div><div class="line">  GitHub: https://github.com/xingsheq</div><div class="line">  Weibo: http://weibo.com/iterator</div></pre></td></tr></table></figure>
+<h3 id="修改Donate为中文打赏"><a href="#修改Donate为中文打赏" class="headerlink" title="修改Donate为中文打赏"></a>修改Donate为中文打赏</h3><ol>
+<li>修改\themes\next\layout_macro\reward.swig设置为可配置变量<br><img src="http://oulmk4pq1.bkt.clouddn.com/donate_modify.png" alt=""></li>
+<li>修改_config.xml</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">reward_comment:</div><div class="line">reward_text: 打赏</div><div class="line">wechatpay: http://xx.png</div><div class="line">wechatpay_text: 微信打赏</div><div class="line">alipay: http://xx.png</div><div class="line">alipay_text: 支付宝打赏</div></pre></td></tr></table></figure>
+<h3 id="添加分享"><a href="#添加分享" class="headerlink" title="添加分享"></a>添加分享</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">jiathis:</div><div class="line">	uid: xxxx</div></pre></td></tr></table></figure>
+<h2 id="其他优化"><a href="#其他优化" class="headerlink" title="其他优化"></a>其他优化</h2><h3 id="使用more控制摘要"><a href="#使用more控制摘要" class="headerlink" title="使用more控制摘要"></a>使用more控制摘要</h3><p>在文章中插入\<!-- more --></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="http://oulmk4pq1.bkt.clouddn.com/rockynote.png" alt="老祁 wechat" style="width: 200px; max-width: 100%;"/>
+    <div>扫一扫，用手机访问本站</div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div></div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="http://oulmk4pq1.bkt.clouddn.com/wechat_in.png" alt="老祁 WeChat Pay"/>
+        <p>微信打赏</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="http://oulmk4pq1.bkt.clouddn.com/alipay_in.png" alt="老祁 Alipay"/>
+        <p>支付宝打赏</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/hexo-optimize/" rel="tag"># hexo optimize</a>
+          
+            <a href="/tags/hexo优化/" rel="tag"># hexo优化</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/08/27/Git-Learning/" rel="prev" title="Git Learning">
+                Git Learning <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+<span class="jiathis_txt">分享到：</span>
+<a class="jiathis_button_fav">收藏夹</a>
+<a class="jiathis_button_copy">复制网址</a>
+<a class="jiathis_button_email">邮件</a>
+<a class="jiathis_button_weixin">微信</a>
+<a class="jiathis_button_qzone">QQ空间</a>
+<a class="jiathis_button_tqq">腾讯微薄</a>
+<a class="jiathis_button_douban">豆瓣</a>
+<a class="jiathis_button_share">一键分享</a>
+
+<a href="http://www.jiathis.com/share?uid=2140465" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+var jiathis_config={
+  data_track_clickback:true,
+  summary:"",
+  shortUrl:false,
+  hideMore:false
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=2141554" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="老祁" />
+          <p class="site-author-name" itemprop="name">老祁</p>
+           
+              <p class="site-description motion-element" itemprop="description">老祁的笔记</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">12</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">25</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/xingsheq" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/iterator" target="_blank" title="Weibo">
+                  
+                    <i class="fa fa-fw fa-weibo"></i>
+                  
+                    
+                      Weibo
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-link"></i>
+              友情链接
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://qijiaoshou.com" title="祁较瘦" target="_blank">祁较瘦</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#CSS优化"><span class="nav-number">1.</span> <span class="nav-text">CSS优化</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#修改网站标题栏背景颜色"><span class="nav-number">1.1.</span> <span class="nav-text">修改网站标题栏背景颜色</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#侧栏社交链接设置居中显示"><span class="nav-number">1.2.</span> <span class="nav-text">侧栏社交链接设置居中显示</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#友情链接居左"><span class="nav-number">1.3.</span> <span class="nav-text">友情链接居左</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#修改文章内链接文本样式"><span class="nav-number">1.4.</span> <span class="nav-text">修改文章内链接文本样式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#修改友情链接样式"><span class="nav-number">1.5.</span> <span class="nav-text">修改友情链接样式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#修改上一篇，下一篇链接文本样式"><span class="nav-number">1.6.</span> <span class="nav-text">修改上一篇，下一篇链接文本样式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#修改标签云样式"><span class="nav-number">1.7.</span> <span class="nav-text">修改标签云样式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#修改字体大小"><span class="nav-number">1.8.</span> <span class="nav-text">修改字体大小</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#调整页面宽度，减少左右侧留白"><span class="nav-number">1.9.</span> <span class="nav-text">调整页面宽度，减少左右侧留白</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#头像旋转"><span class="nav-number">1.10.</span> <span class="nav-text">头像旋转</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#主题-config-yml配置"><span class="nav-number">2.</span> <span class="nav-text">主题_config.yml配置</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#修改主题样式"><span class="nav-number">2.1.</span> <span class="nav-text">修改主题样式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#文章结尾显示微信二维码"><span class="nav-number">2.2.</span> <span class="nav-text">文章结尾显示微信二维码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#侧边栏显示友情链接"><span class="nav-number">2.3.</span> <span class="nav-text">侧边栏显示友情链接</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#侧边栏显示社交媒体链接"><span class="nav-number">2.4.</span> <span class="nav-text">侧边栏显示社交媒体链接</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#修改Donate为中文打赏"><span class="nav-number">2.5.</span> <span class="nav-text">修改Donate为中文打赏</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#添加分享"><span class="nav-number">2.6.</span> <span class="nav-text">添加分享</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#其他优化"><span class="nav-number">3.</span> <span class="nav-text">其他优化</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#使用more控制摘要"><span class="nav-number">3.1.</span> <span class="nav-text">使用more控制摘要</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">老祁</span>
+
+  
+</div>
+
+
+  <div class="powered-by">
+    由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+  </div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">
+    主题 &mdash;
+    <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+      NexT.Pisces
+    </a>
+  </div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+  <script src="https://cdn1.lncld.net/static/js/av-core-mini-0.6.4.js"></script>
+  <script>AV.initialize("XI4CVU7uevOpiu2KjmNMjcd4-gzGzoHsz", "tkrUmr1nl8g9tydH1yf7LJiQ");</script>
+  <script>
+    function showTime(Counter) {
+      var query = new AV.Query(Counter);
+      var entries = [];
+      var $visitors = $(".leancloud_visitors");
+
+      $visitors.each(function () {
+        entries.push( $(this).attr("id").trim() );
+      });
+
+      query.containedIn('url', entries);
+      query.find()
+        .done(function (results) {
+          var COUNT_CONTAINER_REF = '.leancloud-visitors-count';
+
+          if (results.length === 0) {
+            $visitors.find(COUNT_CONTAINER_REF).text(0);
+            return;
+          }
+
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.get('url');
+            var time = item.get('time');
+            var element = document.getElementById(url);
+
+            $(element).find(COUNT_CONTAINER_REF).text(time);
+          }
+          for(var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = document.getElementById(url);
+            var countSpan = $(element).find(COUNT_CONTAINER_REF);
+            if( countSpan.text() == '') {
+              countSpan.text(0);
+            }
+          }
+        })
+        .fail(function (object, error) {
+          console.log("Error: " + error.code + " " + error.message);
+        });
+    }
+
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+      var query = new AV.Query(Counter);
+
+      query.equalTo("url", url);
+      query.find({
+        success: function(results) {
+          if (results.length > 0) {
+            var counter = results[0];
+            counter.fetchWhenSave(true);
+            counter.increment("time");
+            counter.save(null, {
+              success: function(counter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(counter.get('time'));
+              },
+              error: function(counter, error) {
+                console.log('Failed to save Visitor num, with error message: ' + error.message);
+              }
+            });
+          } else {
+            var newcounter = new Counter();
+            /* Set ACL */
+            var acl = new AV.ACL();
+            acl.setPublicReadAccess(true);
+            acl.setPublicWriteAccess(true);
+            newcounter.setACL(acl);
+            /* End Set ACL */
+            newcounter.set("title", title);
+            newcounter.set("url", url);
+            newcounter.set("time", 1);
+            newcounter.save(null, {
+              success: function(newcounter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(newcounter.get('time'));
+              },
+              error: function(newcounter, error) {
+                console.log('Failed to create');
+              }
+            });
+          }
+        },
+        error: function(error) {
+          console.log('Error:' + error.code + " " + error.message);
+        }
+      });
+    }
+
+    $(function() {
+      var Counter = AV.Object.extend("Counter");
+      if ($('.leancloud_visitors').length == 1) {
+        addCount(Counter);
+      } else if ($('.post-title-link').length > 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="java,gc,垃圾回收," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="如何判断是否可以回收 引用计数，相互引用，无法释放  可达性算法，从GC Root向下搜索引用链，不在链上的可以回收，实际是找链上的存活对象，其他的可回收 可作为gc root的对象：（1）栈中局部变量的引用对象（2）方法区类静态属性的引用对象（3）方法区常量引用对象（4）本地方法栈中引用对象   回收算法 标记清除：老年代，效率不高，空间碎片； CMS  复制算法：新生代Eden，Survivo">
+<meta name="keywords" content="java,gc,垃圾回收">
+<meta property="og:type" content="article">
+<meta property="og:title" content="java-GC">
+<meta property="og:url" content="http://rockynote.com/2018/02/08/java-GC/index.html">
+<meta property="og:site_name" content="老祁笔记">
+<meta property="og:description" content="如何判断是否可以回收 引用计数，相互引用，无法释放  可达性算法，从GC Root向下搜索引用链，不在链上的可以回收，实际是找链上的存活对象，其他的可回收 可作为gc root的对象：（1）栈中局部变量的引用对象（2）方法区类静态属性的引用对象（3）方法区常量引用对象（4）本地方法栈中引用对象   回收算法 标记清除：老年代，效率不高，空间碎片； CMS  复制算法：新生代Eden，Survivo">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://oulmk4pq1.bkt.clouddn.com/java/gc组合.png">
+<meta property="og:updated_time" content="2018-03-05T07:15:08.232Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="java-GC">
+<meta name="twitter:description" content="如何判断是否可以回收 引用计数，相互引用，无法释放  可达性算法，从GC Root向下搜索引用链，不在链上的可以回收，实际是找链上的存活对象，其他的可回收 可作为gc root的对象：（1）栈中局部变量的引用对象（2）方法区类静态属性的引用对象（3）方法区常量引用对象（4）本地方法栈中引用对象   回收算法 标记清除：老年代，效率不高，空间碎片； CMS  复制算法：新生代Eden，Survivo">
+<meta name="twitter:image" content="http://oulmk4pq1.bkt.clouddn.com/java/gc组合.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://rockynote.com/2018/02/08/java-GC/"/>
+
+
+
+
+
+  <title>java-GC | 老祁笔记</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-105730821-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">老祁笔记</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Rocky's notes</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://rockynote.com/2018/02/08/java-GC/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="老祁">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="老祁笔记">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">java-GC</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-02-08T02:23:46+00:00">
+                2018-02-08
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/jdk/" itemprop="url" rel="index">
+                    <span itemprop="name">jdk</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+             <span id="/2018/02/08/java-GC/" class="leancloud_visitors" data-flag-title="java-GC">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数&#58;</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="如何判断是否可以回收"><a href="#如何判断是否可以回收" class="headerlink" title="如何判断是否可以回收"></a>如何判断是否可以回收</h1><ol>
+<li><p>引用计数，相互引用，无法释放</p>
+</li>
+<li><p>可达性算法，从GC Root向下搜索引用链，不在链上的可以回收，实际是找链上的存活对象，其他的可回收</p>
+<p>可作为gc root的对象：<br>（1）<strong>栈</strong>中局部变量的引用对象<br>（2）<strong>方法区</strong>类<strong>静态</strong>属性的引用对象<br>（3）<strong>方法区常量</strong>引用对象<br>（4）本地方法<strong>栈</strong>中引用对象</p>
+</li>
+</ol>
+<h1 id="回收算法"><a href="#回收算法" class="headerlink" title="回收算法"></a>回收算法</h1><ol>
+<li><p>标记清除：老年代，效率不高，空间碎片；</p>
+<p><strong>CMS</strong></p>
+</li>
+<li><p>复制算法：新生代Eden，Survivor from ,Survivor to,在对象存活率高的情况下，效率低</p>
+<p><strong>Serial，Parallel New，Parallel Scavenge</strong></p>
+</li>
+<li><p>标记整理：老年代，存活对象移向一端；</p>
+<p><strong>Serail Old，Parallel Old，G1</strong></p>
+</li>
+<li><p>分代收集：新生代，老年代，永久代(java类，方法，使用动态代理生产class，jdk8移除，改为native Memory)，</p>
+<ul>
+<li>新生代Eden满-&gt;minorGC</li>
+<li>老年代满-&gt;FullGC</li>
+</ul>
+</li>
+</ol>
+<h1 id="垃圾收集器"><a href="#垃圾收集器" class="headerlink" title="垃圾收集器"></a>垃圾收集器</h1><ol>
+<li><p>新生代:</p>
+<p>{0}. Serial（单线程）、<br>{0}. Parallel New（多线程）、<br>{0}. Parallel Scavenge（吞吐优先，吞吐量=用户CPU时长/（用户CPU时长+GC时长））<br>{0}. G1：Garbage First 第一时间处理垃圾最多的区域，1.7出现，计划替代cms</p>
+<ul>
+<li>新老代都回收，作用于Java堆</li>
+<li>可设置停顿比例，可预测停顿</li>
+<li>堆被划分成 许多个连续的区域(region)，并行</li>
+<li>并发</li>
+<li>G1划分了一个Humongous区，它用来专门存放巨型对象。如果一个H区装不下一个巨型对象，那么G1会寻找连续的H分区来存储。为了能找到连续的H区，有时候不得不启动Full GC。</li>
+</ul>
+</li>
+<li><p>老年代:</p>
+<p>{0}. Serial Old（单线程）、<br>{0}. Parallel Old（吞吐优先）、<br>{0}. CMS（时间优先，最短回收停顿，并发）<br>   {0}. 回收过程：初始标记-&gt;并发标记-&gt;再次标记-&gt;并发清除<br>   {0}. 只有Serial/Parallel New可以配合CMS使用<br>   {0}. 有碎片<br>{0}. G1</p>
+</li>
+</ol>
+<h2 id="串行-并行-并发"><a href="#串行-并行-并发" class="headerlink" title="串行/并行/并发"></a>串行/并行/并发</h2><ul>
+<li><p>串行：gc单线程</p>
+<p>​    Serial、Serial old</p>
+</li>
+<li><p>并行：gc多线程</p>
+<p>​    除Serial、Serial old外都是并行</p>
+</li>
+<li><p>并发：多cpu时，用户线程和gc线程同时执行，</p>
+<p>​    cms、G1</p>
+</li>
+</ul>
+<h2 id="垃圾收集器组合"><a href="#垃圾收集器组合" class="headerlink" title="垃圾收集器组合"></a>垃圾收集器组合</h2><p><img src="http://oulmk4pq1.bkt.clouddn.com/java/gc组合.png" alt=""></p>
+<p>Hotspot JVM实现中几种GC算法组合包含：</p>
+<ul>
+<li>Serial GC算法：Serial+Serial Old</li>
+<li>Parallel GC算法：Parallel New+串行PS MarkSweep GC(实际是Serail Old的壳)/并行Parallel Old，选PS MarkSweep GC 还是 Parallel Old GC 由参数UseParallelOldGC来控制；</li>
+<li>CMS GC算法：Parallel New+CMS+ Full GC for CMS算法（应对核心的CMS GC某些时候的不赶趟，开销很大）；</li>
+<li>G1 GC算法：Young GC + mixed GC（新生代，再加上部分老生代）＋ Full GC for G1 GC算法（应对G1 GC算法某些时候的不赶趟，开销很大）</li>
+</ul>
+<h2 id="触发条件"><a href="#触发条件" class="headerlink" title="触发条件"></a>触发条件</h2><ul>
+<li>young GC（minorGC）：Eden满了</li>
+<li>Serial Old GC／PS MarkSweep GC／Parallel Old GC的触发则是：在要执行Young GC时候预测其promote的object的总size超过老生代剩余size；</li>
+<li>CMS GC的initial marking的触发条件是老生代使用比率超过某值；</li>
+<li>G1 GC的initial marking的触发条件是Heap使用比率超过某值，跟CMS GC触发条件类似；</li>
+<li>Full GC for CMS算法和Full GC for G1 GC算法的触发原因很明显，就是CMS GC和G1 GC的算法不赶趟了，只能全局范围大搞一次GC了（这很慢）；</li>
+</ul>
+<h2 id="jdk默认垃圾收集器（不确定是否对）"><a href="#jdk默认垃圾收集器（不确定是否对）" class="headerlink" title="jdk默认垃圾收集器（不确定是否对）"></a>jdk默认垃圾收集器（不确定是否对）</h2><ul>
+<li>1.6：ParNew+Serail Old/Parallel Old(需设置参数指定)</li>
+<li>1.7-1.8：Parallel Scavenge+Parallel Old</li>
+<li>1.9：G1</li>
+</ul>
+<h1 id="对象内存分配过程"><a href="#对象内存分配过程" class="headerlink" title="对象内存分配过程"></a>对象内存分配过程</h1><h2 id="新生代内存分配"><a href="#新生代内存分配" class="headerlink" title="新生代内存分配"></a>新生代内存分配</h2><ol>
+<li><p>优先分配到线程本地缓冲区TLAB(Thread Local Allocation Buffer)，TLAB属于Eden一部分；</p>
+</li>
+<li><p>如果TLAB不能分配，在Eden分配：释放Eden不活跃对象，仍空间不足时，触发MinorGC；空间分配担保：MinorGC之前，会评估老年代的连续空间是否大于新生代对象总大小或者历次晋升的平均大小，是的话就会进行Minor GC，否则将进行Full GC。</p>
+<p>MinorGC过程：</p>
+<p>{0}. Eden-&gt;To：存活对象<br>{0}. From-&gt;To：存活对象<br>{0}. From-&gt;Old：长存活对象：15次<br>{0}. To-&gt;Old：Minor GC时，当Survivor To放不下时，进入老年代</p>
+</li>
+</ol>
+<h2 id="OldGen内存分配"><a href="#OldGen内存分配" class="headerlink" title="OldGen内存分配"></a>OldGen内存分配</h2><ol>
+<li>大对象直接进老年代：长字符串及数组</li>
+<li>长期存活对象进老年代，15次</li>
+<li>空间分配担保：Minor GC时，当Survivor To放不下时，进入老年代</li>
+<li>动态年龄判断，不是所有都需要15次，同一age对象大小&gt;50%Survivor，&gt;age的对象进入老年代</li>
+</ol>
+<h1 id="引用"><a href="#引用" class="headerlink" title="引用"></a>引用</h1><p>当内存空间还足够时，则能保留在内存之中；如果内存在进行垃圾收集后还是非常紧张，则可以抛弃这些对象，Java对引用的概念进行了扩充，将引用分为四种，这四种引用强度依次逐渐减弱。</p>
+<ol>
+<li>强引用（Strong Reference）：</li>
+<li>软引用（Soft Reference）：溢出前回收</li>
+<li>弱引用（Weak Reference）：gc时回收</li>
+<li>虚引用（Phantom Reference）：为一个对象设置虚引用关联的唯一目的就是希望能在这个对象被收集器回收时收到一个系统通知</li>
+</ol>
+<h1 id="方法区的回收"><a href="#方法区的回收" class="headerlink" title="方法区的回收"></a>方法区的回收</h1><ul>
+<li>常量池回收：无引用</li>
+<li>类型卸载：实例已回收，且加载该类的classLoader已回收，无任何引用</li>
+</ul>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="http://oulmk4pq1.bkt.clouddn.com/rockynote.png" alt="老祁 wechat" style="width: 200px; max-width: 100%;"/>
+    <div>扫一扫，用手机访问本站</div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div></div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="http://oulmk4pq1.bkt.clouddn.com/wechat_in.png" alt="老祁 WeChat Pay"/>
+        <p>微信打赏</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="http://oulmk4pq1.bkt.clouddn.com/alipay_in.png" alt="老祁 Alipay"/>
+        <p>支付宝打赏</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/java/" rel="tag"># java</a>
+          
+            <a href="/tags/gc/" rel="tag"># gc</a>
+          
+            <a href="/tags/垃圾回收/" rel="tag"># 垃圾回收</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/02/08/Quartz/" rel="next" title="Quartz">
+                <i class="fa fa-chevron-left"></i> Quartz
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/02/08/Design-Pattern/" rel="prev" title="Design-Pattern">
+                Design-Pattern <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+<span class="jiathis_txt">分享到：</span>
+<a class="jiathis_button_fav">收藏夹</a>
+<a class="jiathis_button_copy">复制网址</a>
+<a class="jiathis_button_email">邮件</a>
+<a class="jiathis_button_weixin">微信</a>
+<a class="jiathis_button_qzone">QQ空间</a>
+<a class="jiathis_button_tqq">腾讯微薄</a>
+<a class="jiathis_button_douban">豆瓣</a>
+<a class="jiathis_button_share">一键分享</a>
+
+<a href="http://www.jiathis.com/share?uid=2140465" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+var jiathis_config={
+  data_track_clickback:true,
+  summary:"",
+  shortUrl:false,
+  hideMore:false
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=2141554" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="老祁" />
+          <p class="site-author-name" itemprop="name">老祁</p>
+           
+              <p class="site-description motion-element" itemprop="description">老祁的笔记</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">12</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">25</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/xingsheq" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/iterator" target="_blank" title="Weibo">
+                  
+                    <i class="fa fa-fw fa-weibo"></i>
+                  
+                    
+                      Weibo
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-link"></i>
+              友情链接
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://qijiaoshou.com" title="祁较瘦" target="_blank">祁较瘦</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#如何判断是否可以回收"><span class="nav-number">1.</span> <span class="nav-text">如何判断是否可以回收</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#回收算法"><span class="nav-number">2.</span> <span class="nav-text">回收算法</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#垃圾收集器"><span class="nav-number">3.</span> <span class="nav-text">垃圾收集器</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#串行-并行-并发"><span class="nav-number">3.1.</span> <span class="nav-text">串行/并行/并发</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#垃圾收集器组合"><span class="nav-number">3.2.</span> <span class="nav-text">垃圾收集器组合</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#触发条件"><span class="nav-number">3.3.</span> <span class="nav-text">触发条件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#jdk默认垃圾收集器（不确定是否对）"><span class="nav-number">3.4.</span> <span class="nav-text">jdk默认垃圾收集器（不确定是否对）</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#对象内存分配过程"><span class="nav-number">4.</span> <span class="nav-text">对象内存分配过程</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#新生代内存分配"><span class="nav-number">4.1.</span> <span class="nav-text">新生代内存分配</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#OldGen内存分配"><span class="nav-number">4.2.</span> <span class="nav-text">OldGen内存分配</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#引用"><span class="nav-number">5.</span> <span class="nav-text">引用</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#方法区的回收"><span class="nav-number">6.</span> <span class="nav-text">方法区的回收</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">老祁</span>
+
+  
+</div>
+
+
+  <div class="powered-by">
+    由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+  </div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">
+    主题 &mdash;
+    <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+      NexT.Pisces
+    </a>
+  </div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+  <script src="https://cdn1.lncld.net/static/js/av-core-mini-0.6.4.js"></script>
+  <script>AV.initialize("XI4CVU7uevOpiu2KjmNMjcd4-gzGzoHsz", "tkrUmr1nl8g9tydH1yf7LJiQ");</script>
+  <script>
+    function showTime(Counter) {
+      var query = new AV.Query(Counter);
+      var entries = [];
+      var $visitors = $(".leancloud_visitors");
+
+      $visitors.each(function () {
+        entries.push( $(this).attr("id").trim() );
+      });
+
+      query.containedIn('url', entries);
+      query.find()
+        .done(function (results) {
+          var COUNT_CONTAINER_REF = '.leancloud-visitors-count';
+
+          if (results.length === 0) {
+            $visitors.find(COUNT_CONTAINER_REF).text(0);
+            return;
+          }
+
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.get('url');
+            var time = item.get('time');
+            var element = document.getElementById(url);
+
+            $(element).find(COUNT_CONTAINER_REF).text(time);
+          }
+          for(var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = document.getElementById(url);
+            var countSpan = $(element).find(COUNT_CONTAINER_REF);
+            if( countSpan.text() == '') {
+              countSpan.text(0);
+            }
+          }
+        })
+        .fail(function (object, error) {
+          console.log("Error: " + error.code + " " + error.message);
+        });
+    }
+
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+      var query = new AV.Query(Counter);
+
+      query.equalTo("url", url);
+      query.find({
+        success: function(results) {
+          if (results.length > 0) {
+            var counter = results[0];
+            counter.fetchWhenSave(true);
+            counter.increment("time");
+            counter.save(null, {
+              success: function(counter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(counter.get('time'));
+              },
+              error: function(counter, error) {
+                console.log('Failed to save Visitor num, with error message: ' + error.message);
+              }
+            });
+          } else {
+            var newcounter = new Counter();
+            /* Set ACL */
+            var acl = new AV.ACL();
+            acl.setPublicReadAccess(true);
+            acl.setPublicWriteAccess(true);
+            newcounter.setACL(acl);
+            /* End Set ACL */
+            newcounter.set("title", title);
+            newcounter.set("url", url);
+            newcounter.set("time", 1);
+            newcounter.save(null, {
+              success: function(newcounter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(newcounter.get('time'));
+              },
+              error: function(newcounter, error) {
+                console.log('Failed to create');
+              }
+            });
+          }
+        },
+        error: function(error) {
+          console.log('Error:' + error.code + " " + error.message);
+        }
+      });
+    }
+
+    $(function() {
+      var Counter = AV.Object.extend("Counter");
+      if ($('.leancloud_visitors').length == 1) {
+        addCount(Counter);
+      } else if ($('.post-title-link').length > 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

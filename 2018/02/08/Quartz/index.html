@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="quartz," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="概念  Job是一个接口，只有一个方法void execute(JobExecutionContext context)，开发者实现该接口定义运行任务，JobExecutionContext类提供了调度上下文的各种信息。Job运行时的信息保存在JobDataMap实例中； Job并发Job是有可能并发执行的，比如一个任务要执行10秒中，而调度算法是每秒中触发1次，那么就有可能多个任务被并发执行。">
+<meta name="keywords" content="quartz">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Quartz">
+<meta property="og:url" content="http://rockynote.com/2018/02/08/Quartz/index.html">
+<meta property="og:site_name" content="老祁笔记">
+<meta property="og:description" content="概念  Job是一个接口，只有一个方法void execute(JobExecutionContext context)，开发者实现该接口定义运行任务，JobExecutionContext类提供了调度上下文的各种信息。Job运行时的信息保存在JobDataMap实例中； Job并发Job是有可能并发执行的，比如一个任务要执行10秒中，而调度算法是每秒中触发1次，那么就有可能多个任务被并发执行。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://oulmk4pq1.bkt.clouddn.com/quartz/quartz1.png">
+<meta property="og:image" content="http://oulmk4pq1.bkt.clouddn.com/quartz/quartz2.png">
+<meta property="og:image" content="http://oulmk4pq1.bkt.clouddn.com/quartz/quartz4.png">
+<meta property="og:image" content="http://oulmk4pq1.bkt.clouddn.com/quartz/quartz5.png">
+<meta property="og:image" content="http://oulmk4pq1.bkt.clouddn.com/quartz/quartz6.png">
+<meta property="og:image" content="http://oulmk4pq1.bkt.clouddn.com/quartz/quartz7.png">
+<meta property="og:updated_time" content="2018-03-05T07:15:08.232Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Quartz">
+<meta name="twitter:description" content="概念  Job是一个接口，只有一个方法void execute(JobExecutionContext context)，开发者实现该接口定义运行任务，JobExecutionContext类提供了调度上下文的各种信息。Job运行时的信息保存在JobDataMap实例中； Job并发Job是有可能并发执行的，比如一个任务要执行10秒中，而调度算法是每秒中触发1次，那么就有可能多个任务被并发执行。">
+<meta name="twitter:image" content="http://oulmk4pq1.bkt.clouddn.com/quartz/quartz1.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://rockynote.com/2018/02/08/Quartz/"/>
+
+
+
+
+
+  <title>Quartz | 老祁笔记</title>
+  
+
+
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-105730821-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">老祁笔记</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Rocky's notes</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://rockynote.com/2018/02/08/Quartz/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="老祁">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="老祁笔记">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Quartz</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-02-08T02:04:16+00:00">
+                2018-02-08
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/3rd-party-jars/" itemprop="url" rel="index">
+                    <span itemprop="name">3rd party jars</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+             <span id="/2018/02/08/Quartz/" class="leancloud_visitors" data-flag-title="Quartz">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">阅读次数&#58;</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+             </span>
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h1><p><img src="http://oulmk4pq1.bkt.clouddn.com/quartz/quartz1.png" alt=""></p>
+<p><img src="http://oulmk4pq1.bkt.clouddn.com/quartz/quartz2.png" alt=""></p>
+<h2 id="Job"><a href="#Job" class="headerlink" title="Job"></a>Job</h2><p>是一个接口，只有一个方法void execute(JobExecutionContext context)，开发者实现该接口定义运行任务，JobExecutionContext类提供了调度上下文的各种信息。Job运行时的信息保存在JobDataMap实例中；</p>
+<h3 id="Job并发"><a href="#Job并发" class="headerlink" title="Job并发"></a>Job并发</h3><p>Job是有可能并发执行的，比如一个任务要执行10秒中，而调度算法是每秒中触发1次，那么就有可能多个任务被并发执行。</p>
+<p>有时候我们并不想任务并发执行，比如这个任务要去&quot;获得数据库中所有未发送邮件的名单&quot;，如果是并发执行，就需要一个数据库锁去避免一个数据被多次处理。这个时候一个@DisallowConcurrentExecution解决这个问题。</p>
+<p>就是这样</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">public class DoNothingJob implements Job &#123;</div><div class="line"></div><div class="line">    @DisallowConcurrentExecution</div><div class="line">    public void execute ( JobExecutionContext context ) throws JobExecutionException &#123;</div><div class="line"></div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>注意，@<strong>DisallowConcurrentExecution</strong>是对JobDetail实例生效，也就是如果你定义两个JobDetail，引用同一个Job类，是可以并发执行的。</p>
+<p><strong>@PersistJobDataAfterExecution</strong> ：此注解表示当这个Job的execute方法执行成功后，更新并存储它所持有的JobDetail属性中JobDataMap。如果使用这个注解，强烈建议也使用@DisallowConcurrentExecution，因为并发执行过程中，JobDataMap有可能会发生冲突</p>
+<h2 id="JobDetail"><a href="#JobDetail" class="headerlink" title="JobDetail"></a>JobDetail</h2><p>​    Quartz在每次执行Job时，都重新创建一个Job实例，所以它不直接接受一个Job的实例，相反它接收一个Job实现类，以便运行时通过newInstance()的反射机制实例化Job。因此需要通过一个类来描述Job的实现类及其它相关的静态信息，如Job名字、描述、关联监听器等信息，JobDetail承担了这一角色。jobDetail.getJobDataMap().put()可以传递参数给Job。</p>
+<p>JobDetail有两个boolean属性：</p>
+<ul>
+<li>isDurable：如果设为false，则对应的Job一旦没有关联的触发器，就会被Scheduler自动删除。</li>
+<li>requestsRecovery：如果设为true，当Job执行中遇到硬中断（例如运行崩溃、机器断电等），Scheduler会重新执行。这种情况下，JobExecutionContext.isRecovering()会返回ture。</li>
+</ul>
+<h2 id="Trigger"><a href="#Trigger" class="headerlink" title="Trigger"></a>Trigger</h2><p>是一个类，描述触发Job执行的时间触发规则。主要有SimpleTrigger和CronTrigger这两个子类。</p>
+<h3 id="SimpleTrigger"><a href="#SimpleTrigger" class="headerlink" title="SimpleTrigger"></a>SimpleTrigger</h3><p>当仅需触发一次或者以固定时间间隔周期执行，SimpleTrigger是最适合的选择；</p>
+<h3 id="CronTrigger"><a href="#CronTrigger" class="headerlink" title="CronTrigger"></a>CronTrigger</h3><p>CronTrigger则可以通过Cron表达式定义出各种复杂时间规则的调度方案：如每早晨9:00执行，周一、周三、周五下午5:00执行等；</p>
+<h3 id="CalendarIntervalTrigger"><a href="#CalendarIntervalTrigger" class="headerlink" title="CalendarIntervalTrigger"></a>CalendarIntervalTrigger</h3><p>类似于SimpleTrigger，指定从某一个时间开始，以一定的时间间隔执行的任务。 但是不同的是SimpleTrigger指定的时间间隔为毫秒，没办法指定每隔一个月执行一次（每月的时间间隔不是固定值），而CalendarIntervalTrigger支持的间隔单位有秒，分钟，小时，天，月，年，星期。</p>
+<p>相较于SimpleTrigger有两个优势：</p>
+<ol>
+<li>更方便，比如每隔1小时执行，你不用自己去计算1小时等于多少毫秒。</li>
+<li>支持不是固定长度的间隔，比如间隔为月和年。但劣势是精度只能到秒。</li>
+</ol>
+<p>它适合的任务类似于：9:00 开始执行，并且以后每周 9:00 执行一次</p>
+<p>它的属性有:</p>
+<ul>
+<li>interval 执行间隔</li>
+<li>intervalUnit 执行间隔的单位（秒，分钟，小时，天，月，年，星期）</li>
+</ul>
+<h3 id="DailyTimeIntervalTrigger"><a href="#DailyTimeIntervalTrigger" class="headerlink" title="DailyTimeIntervalTrigger"></a>DailyTimeIntervalTrigger</h3><p>指定每天的某个时间段内，以一定的时间间隔执行任务。并且它可以支持指定星期。</p>
+<p>它适合的任务类似于：指定每天9:00 至 18:00 ，每隔70秒执行一次，并且只要周一至周五执行。</p>
+<p>它的属性有:</p>
+<ul>
+<li>startTimeOfDay 每天开始时间</li>
+<li>endTimeOfDay 每天结束时间</li>
+<li>daysOfWeek 需要执行的星期</li>
+<li>interval 执行间隔</li>
+<li>intervalUnit 执行间隔的单位（秒，分钟，小时，天，月，年，星期）</li>
+<li>repeatCount 重复次数</li>
+</ul>
+<p>TriggerUtils ：创建Trigger的工具类</p>
+<h2 id="Calendar"><a href="#Calendar" class="headerlink" title="Calendar"></a>Calendar</h2><p>​    org.quartz.Calendar和java.util.Calendar不同，它是一些日历特定时间点的集合（可以简单地将org.quartz.Calendar看作java.util.Calendar的集合——java.util.Calendar代表一个日历时间点，无特殊说明后面的Calendar即指org.quartz.Calendar）。<strong>一个Trigger可以和多个Calendar关联</strong>，以便排除或包含某些时间点。假设，我们安排每周星期一早上10:00执行任务，但是如果碰到法定的节日，任务则不执行，这时就需要在Trigger触发机制的基础上使用Calendar进行定点排除。</p>
+<h2 id="Scheduler"><a href="#Scheduler" class="headerlink" title="Scheduler"></a>Scheduler</h2><p>​    代表一个Quartz的独立运行容器，Trigger和JobDetail可以注册到Scheduler中，两者在Scheduler中拥有各自的组及名称，组及名称是Scheduler查找定位容器中某一对象的依据，Trigger的组及名称必须唯一，JobDetail的组和名称也必须唯一（但可以和Trigger的组和名称相同，因为它们是不同类型的）。Scheduler定义了多个接口方法，允许外部通过组及名称访问和控制容器中Trigger和JobDetail。</p>
+<p>​    Scheduler就是Quartz的大脑，所有任务都是由它来设施。Schduelr包含一个两个重要组件: JobStore和ThreadPool。</p>
+<h3 id="JobStore"><a href="#JobStore" class="headerlink" title="JobStore"></a>JobStore</h3><p>是用来存储运行时信息的，包括Trigger,Schduler,JobDetail，业务锁等。它有多种实现</p>
+<ul>
+<li>RAMJob(内存实现)，</li>
+<li>JobStoreTX(JDBC，事务由Quartz管理），</li>
+<li>JobStoreCMT(JDBC，使用容器事务)，</li>
+<li>ClusteredJobStore(集群实现)、</li>
+<li>TerracottaJobStore。</li>
+</ul>
+<h3 id="ThreadPool"><a href="#ThreadPool" class="headerlink" title="ThreadPool"></a>ThreadPool</h3><p>​    就是线程池，Scheduler使用一个线程池作为任务运行的基础设施，任务通过共享线程池中的线程提高运行效率。Quartz有自己的线程池实现。所有任务的都会由线程池执行。Scheduler 调度线程主要有两个： 执行常规调度的线程，和执行 misfired trigger 的线程。常规调度线程轮询存储的所有 trigger，如果有需要触发的 trigger，即到达了下一次触发的时间，则从任务执行线程池获取一个空闲线程，执行与该 trigger 关联的任务。Misfire 线程是扫描所有的 trigger，查看是否有 misfired trigger，如果有的话根据 misfire 的策略分别处理。下图描述了这两个线程的基本流程</p>
+<p>图4</p>
+<p><img src="http://oulmk4pq1.bkt.clouddn.com/quartz/quartz4.png" alt=""></p>
+<p>图5</p>
+<p><img src="http://oulmk4pq1.bkt.clouddn.com/quartz/quartz5.png" alt="">                  </p>
+<p>​    Scheduler可以将Trigger绑定到某一JobDetail中，这样当Trigger触发时，对应的Job就被执行。一个Job可以对应多个Trigger，但一个Trigger只能对应一个Job。可以通过SchedulerFactory创建一个Scheduler实例。Scheduler拥有一个SchedulerContext，它类似于ServletContext，保存着Scheduler上下文信息，Job和Trigger都可以访问SchedulerContext内的信息。SchedulerContext内部通过一个Map，以键值对的方式维护这些上下文数据，SchedulerContext为保存和获取数据提供了多个put()和getXxx()的方法。可以通过Scheduler# getContext()获取对应的SchedulerContext实例。</p>
+<h1 id="开发步骤"><a href="#开发步骤" class="headerlink" title="开发步骤"></a>开发步骤</h1><h2 id="标准开发步骤"><a href="#标准开发步骤" class="headerlink" title="标准开发步骤"></a>标准开发步骤</h2><ol>
+<li><p>开发job，实现Job接口</p>
+</li>
+<li><p>new JobDetail</p>
+<p>JobDetail jobDetail = <strong>new</strong> JobDetail(jobName, _JOB_GROUP_NAME_, cls);</p>
+</li>
+<li><p>传递/获得参数</p>
+<ul>
+<li>传递参数:jobDetail.getJobDataMap().put()</li>
+<li>获得参数content.getJobDetail().getJobDataMap()</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">public class QuartzJob implements Job &#123;</div><div class="line">    @Override</div><div class="line">    public void execute(JobExecutionContext content) throws JobExecutionException &#123;</div><div class="line">        System.out.println(new SimpleDateFormat(&quot;yyyy-MM-dd HH:mm:ss&quot;).format(new Date())+ &quot;★★★★★★★★★★★&quot;);</div><div class="line">        String jobName = content.getJobDetail().getName();</div><div class="line">        JobDataMap dataMap = content.getJobDetail().getJobDataMap();</div><div class="line">        String param = dataMap.getString(&quot;param&quot;);</div><div class="line">        System.out.println(&quot;传递的参数是=&quot;+param +&quot;任务名字是=&quot;+jobName);</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+<li><p>new Trigger,指定周期</p>
+</li>
+<li><p>实例化Scheduler</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">SchedulerFactory_gSchedulerFactory_ = new StdSchedulerFactory();</div><div class="line">Scheduler sched = gSchedulerFactory.getScheduler();</div></pre></td></tr></table></figure>
+</li>
+<li><p>加入schedule容器</p>
+<p>sched.scheduleJob(jobDetail, trigger);</p>
+</li>
+<li><p>启动schedule</p>
+<p>sched.start();</p>
+</li>
+</ol>
+<h2 id="spring-quartz集成"><a href="#spring-quartz集成" class="headerlink" title="spring+quartz集成"></a>spring+quartz集成</h2><p>配置以下bean：</p>
+<ul>
+<li>Job bean,不用实现Job类</li>
+<li>MethodInvokingJobDetailFactoryBean</li>
+<li>CronTriggerBean or SimpleTriggerBean</li>
+<li>SchedulerFactoryBean</li>
+</ul>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><ol>
+<li><p>JobDetail负责Job的实例化，可传参给Job</p>
+</li>
+<li><p>Scheduler类似容器，Trigger和JobDetail注册在其中，可以根据名字和组获得Trigger和JobDetail</p>
+</li>
+<li><p>Job实现类通过JobExecutionContext可以获得JobDetail里的参数</p>
+</li>
+<li><p>SimpleTrigger 必须设置repeatCount，否则只执行一次</p>
+</li>
+<li><p>除SimpleTrigger和CronTrigger外的Trigger：</p>
+<p>CalendarIntervalTrigger：每隔XX秒，分钟，小时，天，月，年，星期执行一次</p>
+<p>DailyTimeIntervalTrigger: 每天9:00 至 18:00 ，每隔70秒执行一次，并且只要周一至周五执行</p>
+</li>
+</ol>
+<h2 id="Crontab通配符"><a href="#Crontab通配符" class="headerlink" title="Crontab通配符"></a>Crontab通配符</h2><p><img src="http://oulmk4pq1.bkt.clouddn.com/quartz/quartz6.png" alt=""></p>
+<p><strong>通配符*</strong>：表示所有值。例如:在分的字段上设置 “*“,表示每一分钟都会触发<br><strong>通配符?</strong>：表示不指定值。使用的场景为不需要关心当前设置这个字段的值。例如:要在每月的10号触发一个操作，但不关心是周几，所以需要周位置的那个字段设置为”?” 具体设置为 0 0 0 10 <em> ?<br><strong>通配符-</strong>：表示区间。例如在小时上设置 “10-12”,表示 10,11,12点都会触发。<br><strong>通配符,</strong>：表示指定多个值。例如在周字段上设置 “MON,WED,FRI” 表示周一，周三和周五触发<br><strong>通配符/</strong>：用于递增触发。如在秒上面设置”5/15” 表示从5秒开始，每增15秒触发(5,20,35,50)。在月字段上设置’1/3’所示每月1号开始，每隔三天触发一次。<br><strong>通配符L</strong>：表示最后的意思。例如在日字段设置上，表示当月的最后一天(依据当前月份，如果是二月还会依据是否是润年[leap]), 在周字段上表示星期六，相当于”7”或”SAT”。如果在”L”前加上数字，则表示该数据的最后一个。例如在周字段上设置”6L”这样的格式，则表示“本月最后一个星期五”<br><strong>通配符W</strong>：表示离指定日期的最近那个工作日(周一至周五)。例如在日字段上设置”15W”，表示离每月15号最近的那个工作日触发。如果15号正好是周六，则找最近的周五(14号)触发, 如果15号是周未，则找最近的下周一(16号)触发。如果15号正好在工作日(周一至周五)，则就在该天触发。如果指定格式为 “1W”,它则表示每月1号往后最近的工作日触发。如果1号正是周六，则将在3号下周一触发。(注，”W”前只能设置具体的数字,不允许区间”-“)。<br><strong>小提示</strong>：’L’和 ‘W’可以一组合使用。如果在日字段上设置”LW”,则表示在本月的最后一个工作日触发；周字段的设置，若使用英文字母是不区分大小写的，即MON与mon相同。<br><strong>通配符#</strong>：表示每月的第几个周几。例如在周字段上设置”6#3”表示在每月的第三个周六。注意如果指定”#5”，正好第五周没有周六，则不会触发该配置(用在母亲节和父亲节再合适不过了)。<br><em>*注</em></em>：表中月份一行的JAN-DEC，是指一月到十二月的英文缩写；星期一行的SUN-SAT，是指星期天到星期六的英文缩写</p>
+<h2 id="Crontab案例"><a href="#Crontab案例" class="headerlink" title="Crontab案例"></a>Crontab案例</h2><p><img src="http://oulmk4pq1.bkt.clouddn.com/quartz/quartz7.png" alt=""></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+      <div>
+        <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="http://oulmk4pq1.bkt.clouddn.com/rockynote.png" alt="老祁 wechat" style="width: 200px; max-width: 100%;"/>
+    <div>扫一扫，用手机访问本站</div>
+</div>
+
+      </div>
+    
+
+    
+      <div>
+        <div style="padding: 10px 0; margin: 20px auto; width: 90%; text-align: center;">
+  <div></div>
+  <button id="rewardButton" disable="enable" onclick="var qr = document.getElementById('QR'); if (qr.style.display === 'none') {qr.style.display='block';} else {qr.style.display='none'}">
+    <span>打赏</span>
+  </button>
+  <div id="QR" style="display: none;">
+
+    
+      <div id="wechat" style="display: inline-block">
+        <img id="wechat_qr" src="http://oulmk4pq1.bkt.clouddn.com/wechat_in.png" alt="老祁 WeChat Pay"/>
+        <p>微信打赏</p>
+      </div>
+    
+
+    
+      <div id="alipay" style="display: inline-block">
+        <img id="alipay_qr" src="http://oulmk4pq1.bkt.clouddn.com/alipay_in.png" alt="老祁 Alipay"/>
+        <p>支付宝打赏</p>
+      </div>
+    
+
+    
+
+  </div>
+</div>
+
+      </div>
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/quartz/" rel="tag"># quartz</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/02/07/Jave-Unsafe/" rel="next" title="Jave Unsafe类源码解析">
+                <i class="fa fa-chevron-left"></i> Jave Unsafe类源码解析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/02/08/java-GC/" rel="prev" title="java-GC">
+                java-GC <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+<span class="jiathis_txt">分享到：</span>
+<a class="jiathis_button_fav">收藏夹</a>
+<a class="jiathis_button_copy">复制网址</a>
+<a class="jiathis_button_email">邮件</a>
+<a class="jiathis_button_weixin">微信</a>
+<a class="jiathis_button_qzone">QQ空间</a>
+<a class="jiathis_button_tqq">腾讯微薄</a>
+<a class="jiathis_button_douban">豆瓣</a>
+<a class="jiathis_button_share">一键分享</a>
+
+<a href="http://www.jiathis.com/share?uid=2140465" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+<a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+var jiathis_config={
+  data_track_clickback:true,
+  summary:"",
+  shortUrl:false,
+  hideMore:false
+}
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=2141554" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="老祁" />
+          <p class="site-author-name" itemprop="name">老祁</p>
+           
+              <p class="site-description motion-element" itemprop="description">老祁的笔记</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">12</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">7</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">25</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+            
+              <span class="links-of-author-item">
+                <a href="https://github.com/xingsheq" target="_blank" title="GitHub">
+                  
+                    <i class="fa fa-fw fa-github"></i>
+                  
+                    
+                      GitHub
+                    
+                </a>
+              </span>
+            
+              <span class="links-of-author-item">
+                <a href="http://weibo.com/iterator" target="_blank" title="Weibo">
+                  
+                    <i class="fa fa-fw fa-weibo"></i>
+                  
+                    
+                      Weibo
+                    
+                </a>
+              </span>
+            
+          
+        </div>
+
+        
+        
+
+        
+        
+          <div class="links-of-blogroll motion-element links-of-blogroll-inline">
+            <div class="links-of-blogroll-title">
+              <i class="fa  fa-fw fa-link"></i>
+              友情链接
+            </div>
+            <ul class="links-of-blogroll-list">
+              
+                <li class="links-of-blogroll-item">
+                  <a href="http://qijiaoshou.com" title="祁较瘦" target="_blank">祁较瘦</a>
+                </li>
+              
+            </ul>
+          </div>
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#概念"><span class="nav-number">1.</span> <span class="nav-text">概念</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Job"><span class="nav-number">1.1.</span> <span class="nav-text">Job</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Job并发"><span class="nav-number">1.1.1.</span> <span class="nav-text">Job并发</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#JobDetail"><span class="nav-number">1.2.</span> <span class="nav-text">JobDetail</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Trigger"><span class="nav-number">1.3.</span> <span class="nav-text">Trigger</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#SimpleTrigger"><span class="nav-number">1.3.1.</span> <span class="nav-text">SimpleTrigger</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CronTrigger"><span class="nav-number">1.3.2.</span> <span class="nav-text">CronTrigger</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CalendarIntervalTrigger"><span class="nav-number">1.3.3.</span> <span class="nav-text">CalendarIntervalTrigger</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#DailyTimeIntervalTrigger"><span class="nav-number">1.3.4.</span> <span class="nav-text">DailyTimeIntervalTrigger</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Calendar"><span class="nav-number">1.4.</span> <span class="nav-text">Calendar</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Scheduler"><span class="nav-number">1.5.</span> <span class="nav-text">Scheduler</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#JobStore"><span class="nav-number">1.5.1.</span> <span class="nav-text">JobStore</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ThreadPool"><span class="nav-number">1.5.2.</span> <span class="nav-text">ThreadPool</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#开发步骤"><span class="nav-number">2.</span> <span class="nav-text">开发步骤</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#标准开发步骤"><span class="nav-number">2.1.</span> <span class="nav-text">标准开发步骤</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#spring-quartz集成"><span class="nav-number">2.2.</span> <span class="nav-text">spring+quartz集成</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Crontab通配符"><span class="nav-number">3.1.</span> <span class="nav-text">Crontab通配符</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Crontab案例"><span class="nav-number">3.2.</span> <span class="nav-text">Crontab案例</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">老祁</span>
+
+  
+</div>
+
+
+  <div class="powered-by">
+    由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+  </div>
+
+  <span class="post-meta-divider">|</span>
+
+  <div class="theme-info">
+    主题 &mdash;
+    <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+      NexT.Pisces
+    </a>
+  </div>
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+  <script src="https://cdn1.lncld.net/static/js/av-core-mini-0.6.4.js"></script>
+  <script>AV.initialize("XI4CVU7uevOpiu2KjmNMjcd4-gzGzoHsz", "tkrUmr1nl8g9tydH1yf7LJiQ");</script>
+  <script>
+    function showTime(Counter) {
+      var query = new AV.Query(Counter);
+      var entries = [];
+      var $visitors = $(".leancloud_visitors");
+
+      $visitors.each(function () {
+        entries.push( $(this).attr("id").trim() );
+      });
+
+      query.containedIn('url', entries);
+      query.find()
+        .done(function (results) {
+          var COUNT_CONTAINER_REF = '.leancloud-visitors-count';
+
+          if (results.length === 0) {
+            $visitors.find(COUNT_CONTAINER_REF).text(0);
+            return;
+          }
+
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.get('url');
+            var time = item.get('time');
+            var element = document.getElementById(url);
+
+            $(element).find(COUNT_CONTAINER_REF).text(time);
+          }
+          for(var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = document.getElementById(url);
+            var countSpan = $(element).find(COUNT_CONTAINER_REF);
+            if( countSpan.text() == '') {
+              countSpan.text(0);
+            }
+          }
+        })
+        .fail(function (object, error) {
+          console.log("Error: " + error.code + " " + error.message);
+        });
+    }
+
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+      var query = new AV.Query(Counter);
+
+      query.equalTo("url", url);
+      query.find({
+        success: function(results) {
+          if (results.length > 0) {
+            var counter = results[0];
+            counter.fetchWhenSave(true);
+            counter.increment("time");
+            counter.save(null, {
+              success: function(counter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(counter.get('time'));
+              },
+              error: function(counter, error) {
+                console.log('Failed to save Visitor num, with error message: ' + error.message);
+              }
+            });
+          } else {
+            var newcounter = new Counter();
+            /* Set ACL */
+            var acl = new AV.ACL();
+            acl.setPublicReadAccess(true);
+            acl.setPublicWriteAccess(true);
+            newcounter.setACL(acl);
+            /* End Set ACL */
+            newcounter.set("title", title);
+            newcounter.set("url", url);
+            newcounter.set("time", 1);
+            newcounter.save(null, {
+              success: function(newcounter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(newcounter.get('time'));
+              },
+              error: function(newcounter, error) {
+                console.log('Failed to create');
+              }
+            });
+          }
+        },
+        error: function(error) {
+          console.log('Error:' + error.code + " " + error.message);
+        }
+      });
+    }
+
+    $(function() {
+      var Counter = AV.Object.extend("Counter");
+      if ($('.leancloud_visitors').length == 1) {
+        addCount(Counter);
+      } else if ($('.post-title-link').length > 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
